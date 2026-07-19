@@ -1,0 +1,20 @@
+package com.notificationengine.SMSConsumer.repo;
+
+import com.notificationengine.SMSConsumer.models.db.Notification;
+import com.notificationengine.SMSConsumer.models.enums.Channel;
+import com.notificationengine.SMSConsumer.models.enums.Status;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
+    List<Notification> findByUserId(Long userId);
+
+    List<Notification> findByUserIdAndChannel(Long userId, Channel channel);
+
+    List<Notification> findByStatus(Status status);
+}
+

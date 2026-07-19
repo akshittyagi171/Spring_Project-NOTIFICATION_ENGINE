@@ -1,0 +1,788 @@
+{
+  "info": {
+    "_postman_id": "cdfd315c-63cb-49f9-bcf5-e934d82b738d",
+    "name": "NotificationEngine",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "56722699",
+    "_collection_link": "https://go.postman.co/collection/56722699-cdfd315c-63cb-49f9-bcf5-e934d82b738d?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Send Notification",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"notificationPriority\": 1,\n  \"channels\": [\"sms\",\"push\",\"email\",\"whatsapp\"],\n  \"recipient\": {\n    \"userId\": \"1\"\n  },\n  \"content\": {\n    \"usingTemplates\": true,\n    \"templateName\": \"Trending Nearby\",\n    \"placeholders\": {\n      \"name\": \"Akshit\",\n      \"location\": \"Noida\"\n    },\n    \"message\": \"\",\n    \"emailSubject\": \"New Headphones Offer | Hey Check this new Headphone Out\",\n    \"emailAttachments\": [\n      \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n    ],\n    \"pushNotification\": {\n      \"title\": \"New Headphones Offer | Hey Check this new Headphone Out\",\n      \"action\": {\n        \"url\": \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n      }\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/api/send-notification",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "send-notification"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notificationPriority\": 1,\n  \"channels\": [\"sms\",\"push\",\"email\",\"whatsapp\"],\n  \"recipient\": {\n    \"userId\": \"1\"\n  },\n  \"content\": {\n    \"usingTemplates\": true,\n    \"templateName\": \"Trending Nearby\",\n    \"placeholders\": {\n      \"name\": \"Akshit\",\n      \"location\": \"Noida\"\n    },\n    \"message\": \"\",\n    \"emailSubject\": \"New Headphones Offer | Hey Check this new Headphone Out\",\n    \"emailAttachments\": [\n      \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n    ],\n    \"pushNotification\": {\n      \"title\": \"New Headphones Offer | Hey Check this new Headphone Out\",\n      \"action\": {\n        \"url\": \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n      }\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:8080/api/send-notification",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "send-notification"
+              ]
+            }
+          },
+          "status": "Accepted",
+          "code": 202,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 08:53:15 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 202,\n    \"message\": \"Notification accepted for processing.\",\n    \"timestamp\": \"2026-07-19T14:23:15.629217\",\n    \"data\": {\n        \"notificationSendRequest\": {\n            \"notificationPriority\": 1,\n            \"channels\": [\n                \"push\"\n            ],\n            \"recipient\": {\n                \"userId\": \"1\",\n                \"userEmail\": null\n            },\n            \"content\": {\n                \"usingTemplates\": true,\n                \"templateName\": \"Trending Nearby\",\n                \"placeholders\": {\n                    \"name\": \"Akshit\",\n                    \"location\": \"Noida\"\n                },\n                \"message\": \"\",\n                \"emailSubject\": \"Flipkart Offer | Hey Check this Out\",\n                \"emailAttachments\": [\n                    \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n                ],\n                \"pushNotification\": {\n                    \"title\": \"Flipkart Offer | Hey Check this Out\",\n                    \"action\": {\n                        \"url\": \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n                    }\n                }\n            }\n        },\n        \"status\": \"QUEUED_IN_KAFKA\"\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Akshit\",\n    \"email\": \"tyagiakshit171@gmail.com\",\n    \"phone\": \"+917906767568\",\n    \"fcmToken\": \"fSQiHd451c7apfutKqEc-C:APA91bE781yGvq-c4hfURYNp-9bEkZjyIah0BIG9my35SF-JbRg5b3r7HKZ5JpmNJWNQqhRq1GVDQrl2KHc2AVkeDCwMRTnbS-QK1AfdyCCpNB5Z4PqdhLw\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/api/v1/users/sync",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "sync"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Akshit\",\n    \"email\": \"tyagiakshit171@gmail.com\",\n    \"phone\": \"+917906767568\",\n    \"fcmToken\": \"fSQiHd451c7apfutKqEc-C:APA91bE781yGvq-c4hfURYNp-9bEkZjyIah0BIG9my35SF-JbRg5b3r7HKZ5JpmNJWNQqhRq1GVDQrl2KHc2AVkeDCwMRTnbS-QK1AfdyCCpNB5Z4PqdhLw\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:8080/api/sync",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "sync"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 04:57:21 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 201,\n    \"message\": \"User profile registered successfully\",\n    \"timestamp\": \"2026-07-19T10:27:21.258304\",\n    \"data\": {\n        \"id\": 3,\n        \"email\": \"tyagiakshit171@gmail.com\",\n        \"status\": \"CREATED\"\n    }\n}"
+        },
+        {
+          "name": "Success - Already exists",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Akshit\",\n    \"email\": \"tyagiakshit171@gmail.com\",\n    \"phone\": \"+917906767568\",\n    \"fcmToken\": \"fSQiHd451c7apfutKqEc-C:APA91bE781yGvq-c4hfURYNp-9bEkZjyIah0BIG9my35SF-JbRg5b3r7HKZ5JpmNJWNQqhRq1GVDQrl2KHc2AVkeDCwMRTnbS-QK1AfdyCCpNB5Z4PqdhLw\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:8080/api/v1/users/sync",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "sync"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 11:16:11 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"User profile matched and synced\",\n    \"timestamp\": \"2026-07-19T16:46:11.254307\",\n    \"data\": {\n        \"id\": 3,\n        \"email\": \"tyagiakshit171@gmail.com\",\n        \"status\": \"ALREADY_EXISTS\"\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Preferences",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"channel\": \"email\",\n    \"isEnabled\": true,\n    \"allowedMessagesPriority\": \"[1, 2]\",\n    \"quietHours\": \"{\\\"end\\\": \\\"06:00\\\", \\\"start\\\": \\\"22:00\\\", \\\"quietHoursEnabled\\\": true}\"\n  },\n  {\n    \"channel\": \"whatsapp\",\n    \"isEnabled\": false,\n    \"allowedMessagesPriority\": \"[1]\",\n    \"quietHours\": \"{\\\"end\\\": \\\"00:00\\\", \\\"start\\\": \\\"00:00\\\", \\\"quietHoursEnabled\\\": false}\"\n  }\n]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/api/v1/users/3/preferences",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "3",
+            "preferences"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"channel\": \"email\",\n    \"isEnabled\": true,\n    \"allowedMessagesPriority\": \"[1, 2]\",\n    \"quietHours\": \"{\\\"end\\\": \\\"06:00\\\", \\\"start\\\": \\\"22:00\\\", \\\"quietHoursEnabled\\\": true}\"\n  },\n  {\n    \"channel\": \"whatsapp\",\n    \"isEnabled\": false,\n    \"allowedMessagesPriority\": \"[1]\",\n    \"quietHours\": \"{\\\"end\\\": \\\"00:00\\\", \\\"start\\\": \\\"00:00\\\", \\\"quietHoursEnabled\\\": false}\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:8080/api/v1/users/3/preferences",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "3",
+                "preferences"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 06:53:07 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"User preferences updated successfully\",\n    \"timestamp\": \"2026-07-19T12:23:07.595877\",\n    \"data\": \"SUCCESS\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Akshit\",\n    \"email\": \"tyagiakshit171@gmail.com\",\n    \"phone\": \"+917906767568\",\n    \"fcmToken\": \"fSQiHd451c7apfutKqEc-C:APA91bE781yGvq-c4hfURYNp-9bEkZjyIah0BIG9my35SF-JbRg5b3r7HKZ5JpmNJWNQqhRq1GVDQrl2KHc2AVkeDCwMRTnbS-QK1AfdyCCpNB5Z4PqdhLw\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/api/v1/users/update",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "update"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Akshit\",\n    \"email\": \"tyagiakshit171@gmail.com\",\n    \"phone\": \"+917906767568\",\n    \"fcmToken\": \"fSQiHd451c7apfutKqEc-C:APA91bE781yGvq-c4hfURYNp-9bEkZjyIah0BIG9my35SF-JbRg5b3r7HKZ5JpmNJWNQqhRq1GVDQrl2KHc2AVkeDCwMRTnbS-QK1AfdyCCpNB5Z4PqdhLw\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:8080/api/v1/users/update",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "update"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 11:15:28 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"User profile and tokens synchronized successfully\",\n    \"timestamp\": \"2026-07-19T16:45:28.141533\",\n    \"data\": {\n        \"id\": 3,\n        \"email\": \"tyagiakshit171@gmail.com\",\n        \"status\": \"UPDATED\"\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Template",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"WELCOME_USER_TEMPLATE\",\n  \"content\": \"Hello {firstName}, your OTP for registering with email {emailId} is {otp}. Valid for {expiry} minutes.\",\n  \"placeholders\": \"[\\\"firstName\\\", \\\"emailId\\\", \\\"otp\\\", \\\"expiry\\\"]\",\n  \"templatePriority\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/api/v1/templates",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "templates"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"WELCOME_USER_TEMPLATE\",\n  \"content\": \"Hello {firstName}, your OTP for registering with email {emailId} is {otp}. Valid for {expiry} minutes.\",\n  \"placeholders\": \"[\\\"firstName\\\", \\\"emailId\\\", \\\"otp\\\", \\\"expiry\\\"]\",\n  \"templatePriority\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:8080/api/v1/templates",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "templates"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 11:24:31 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 201,\n    \"message\": \"Template created successfully\",\n    \"timestamp\": \"2026-07-19T16:54:31.44762\",\n    \"data\": {\n        \"id\": 9,\n        \"name\": \"WELCOME_USER_TEMPLATE\",\n        \"content\": \"Hello {firstName}, your OTP for registering with email {emailId} is {otp}. Valid for {expiry} minutes.\",\n        \"placeholders\": \"[\\\"firstName\\\", \\\"emailId\\\", \\\"otp\\\", \\\"expiry\\\"]\",\n        \"templatePriority\": 1,\n        \"createdAt\": \"2026-07-19T16:54:31.434847\",\n        \"updatedAt\": \"2026-07-19T16:54:31.43485\"\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get All Templates",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "localhost:8080/api/v1/templates",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "templates"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "localhost:8080/api/v1/templates",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "templates"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 11:25:29 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"Templates fetched successfully\",\n    \"timestamp\": \"2026-07-19T16:55:29.729459\",\n    \"data\": [\n        {\n            \"id\": 1,\n            \"name\": \"OTP Verification\",\n            \"content\": \"Your OTP is {otp}. Please use this to complete your verification. Do not share this code with anyone.\",\n            \"placeholders\": \"[\\\"otp\\\"]\",\n            \"templatePriority\": 1,\n            \"createdAt\": \"2026-07-16T08:55:34\",\n            \"updatedAt\": \"2026-07-16T08:55:34\"\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Welcome Greeting\",\n            \"content\": \"Hello {name}, welcome to Trigear! We are excited to have you onboard.\",\n            \"placeholders\": \"[\\\"name\\\"]\",\n            \"templatePriority\": 2,\n            \"createdAt\": \"2026-07-16T08:55:47\",\n            \"updatedAt\": \"2026-07-16T08:55:47\"\n        },\n        {\n            \"id\": 3,\n            \"name\": \"Password Reset\",\n            \"content\": \"Hi {name}, you requested to reset your password. Use the link below to set a new password: {reset_link}\",\n            \"placeholders\": \"[\\\"name\\\", \\\"reset_link\\\"]\",\n            \"templatePriority\": 1,\n            \"createdAt\": \"2026-07-16T08:55:54\",\n            \"updatedAt\": \"2026-07-16T08:55:54\"\n        },\n        {\n            \"id\": 4,\n            \"name\": \"Account Deactivation Warning\",\n            \"content\": \"Dear {name}, your account is scheduled for deactivation on {deactivation_date}. Please contact support if this is a mistake.\",\n            \"placeholders\": \"[\\\"name\\\", \\\"deactivation_date\\\"]\",\n            \"templatePriority\": 1,\n            \"createdAt\": \"2026-07-16T08:56:02\",\n            \"updatedAt\": \"2026-07-16T08:56:02\"\n        },\n        {\n            \"id\": 5,\n            \"name\": \"Birthday Wish\",\n            \"content\": \"Happy Birthday, {name}! 🎉 Wishing you a fantastic day filled with joy and laughter. Here’s a special treat: {birthday_offer}.\",\n            \"placeholders\": \"[\\\"name\\\", \\\"birthday_offer\\\"]\",\n            \"templatePriority\": 2,\n            \"createdAt\": \"2026-07-16T08:56:12\",\n            \"updatedAt\": \"2026-07-16T08:56:12\"\n        },\n        {\n            \"id\": 6,\n            \"name\": \"Trending Nearby\",\n            \"content\": \"Hi {name}, check out what’s trending in {location}! Don’t miss out on amazing deals and events near you.\",\n            \"placeholders\": \"[\\\"name\\\", \\\"location\\\"]\",\n            \"templatePriority\": 3,\n            \"createdAt\": \"2026-07-16T08:56:27\",\n            \"updatedAt\": \"2026-07-16T08:56:27\"\n        },\n        {\n            \"id\": 7,\n            \"name\": \"Rich Promo With Link\",\n            \"content\": \"Hi {name}, absolute massive deals are live now! Tap the button below to claim your personalized offer.\\\\n{url}\",\n            \"placeholders\": \"[\\\"name\\\", \\\"url\\\"]\",\n            \"templatePriority\": 1,\n            \"createdAt\": \"2026-07-18T18:15:00\",\n            \"updatedAt\": \"2026-07-18T13:06:50\"\n        },\n        {\n            \"id\": 9,\n            \"name\": \"WELCOME_USER_TEMPLATE\",\n            \"content\": \"Hello {firstName}, your OTP for registering with email {emailId} is {otp}. Valid for {expiry} minutes.\",\n            \"placeholders\": \"[\\\"firstName\\\", \\\"emailId\\\", \\\"otp\\\", \\\"expiry\\\"]\",\n            \"templatePriority\": 1,\n            \"createdAt\": \"2026-07-19T16:54:31\",\n            \"updatedAt\": \"2026-07-19T16:54:31\"\n        }\n    ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Template by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "localhost:8080/api/v1/templates/3",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "templates",
+            "3"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "localhost:8080/api/v1/templates/3",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "templates",
+                "3"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 11:26:24 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"Template details retrieved successfully\",\n    \"timestamp\": \"2026-07-19T16:56:24.33681\",\n    \"data\": {\n        \"id\": 3,\n        \"name\": \"Password Reset\",\n        \"content\": \"Hi {name}, you requested to reset your password. Use the link below to set a new password: {reset_link}\",\n        \"placeholders\": \"[\\\"name\\\", \\\"reset_link\\\"]\",\n        \"templatePriority\": 1,\n        \"createdAt\": \"2026-07-16T08:55:54\",\n        \"updatedAt\": \"2026-07-16T08:55:54\"\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Template",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"WELCOME_USER_TEMPLATE\",\n  \"content\": \"Hello {firstName}, your OTP for registering with email {emailId} is {otp}. Valid for {expiry} minutes, do not share with anyone.\",\n  \"placeholders\": \"[\\\"firstName\\\", \\\"emailId\\\", \\\"otp\\\", \\\"expiry\\\"]\",\n  \"templatePriority\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/api/v1/templates/9",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "templates",
+            "9"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"WELCOME_USER_TEMPLATE\",\n  \"content\": \"Hello {firstName}, your OTP for registering with email {emailId} is {otp}. Valid for {expiry} minutes, do not share with anyone.\",\n  \"placeholders\": \"[\\\"firstName\\\", \\\"emailId\\\", \\\"otp\\\", \\\"expiry\\\"]\",\n  \"templatePriority\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:8080/api/v1/templates/9",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "templates",
+                "9"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 11:27:37 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"Template updated successfully\",\n    \"timestamp\": \"2026-07-19T16:57:37.535115\",\n    \"data\": {\n        \"id\": 9,\n        \"name\": \"WELCOME_USER_TEMPLATE\",\n        \"content\": \"Hello {firstName}, your OTP for registering with email {emailId} is {otp}. Valid for {expiry} minutes, do not share with anyone.\",\n        \"placeholders\": \"[\\\"firstName\\\", \\\"emailId\\\", \\\"otp\\\", \\\"expiry\\\"]\",\n        \"templatePriority\": 1,\n        \"createdAt\": \"2026-07-19T16:54:31\",\n        \"updatedAt\": \"2026-07-19T16:57:37.507646\"\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Template",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "localhost:8080/api/v1/templates/9",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "templates",
+            "9"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "localhost:8080/api/v1/templates/9",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "templates",
+                "9"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 19 Jul 2026 11:28:20 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"Template deleted successfully\",\n    \"timestamp\": \"2026-07-19T16:58:20.432067\",\n    \"data\": \"DELETED\"\n}"
+        }
+      ]
+    }
+  ]
+}
