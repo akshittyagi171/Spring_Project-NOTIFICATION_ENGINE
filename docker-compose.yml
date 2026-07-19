@@ -1,14 +1,37 @@
 version: '3.8'
+
 services:
+  # --- MySQL Database Service ---
+  mysql:
+    image: mysql:8.0
+    container_name: notification-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: notification_engine
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - notification-network
+
+  # --- Redis Caching Service ---
+  redis:
+    image: redis:latest
+    container_name: Redis_Container
+    ports:
+      - "6379:6379"
+    networks:
+      - notification-network
+
+  # --- Apache Kafka Broker (Kraft Mode - No Zookeeper Needed) ---
   broker:
     image: confluentinc/cp-kafka:7.5.0
-    hostname: broker
     container_name: broker
     ports:
       - "9092:9092"
       - "29092:29092"
     environment:
-      # KRaft Specific Settings
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092'
@@ -22,12 +45,13 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-      # Cluster ID required for KRaft mode
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    networks:
+      - notification-network
 
+  # --- Confluent Control Center (UI for Kafka) ---
   control-center:
     image: confluentinc/cp-enterprise-control-center:7.5.0
-    hostname: control-center
     container_name: control-center
     depends_on:
       - broker
@@ -40,3 +64,12 @@ services:
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       PORT: 9021
+    networks:
+      - notification-network
+
+volumes:
+  mysql_data:
+
+networks:
+  notification-network:
+    driver: bridge
