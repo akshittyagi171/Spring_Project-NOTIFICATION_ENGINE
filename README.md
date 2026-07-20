@@ -53,61 +53,11 @@ The system is composed of **6 services**, each with a single, well-defined respo
 2. **`NotificationProcessor`** — the brain. Consumes priority-tagged requests, resolves templates, checks user preferences/quiet-hours, de-duplicates, persists to the DB, and fans the request out to per-channel Kafka topics. This service is **deployed multiple times** — once per priority level (`NOTIFICATION_PRIORITY=1|2|3`) — so a flood of low-priority marketing messages can never starve high-priority OTPs of processing capacity.
 3. **`EmailConsumer`**, **`SMSConsumer`**, **`WhatsappConsumer`**, **`PushNConsumer`** — four independent microservices, one per channel, each consuming from its own Kafka topic and calling the relevant third-party vendor API (SendGrid / Twilio / Twilio WhatsApp / FCM), wrapped in a circuit breaker + retry policy, with dead-letter handling on exhausted retries.
 
-```mermaid
-flowchart TB
-    Client["Client / API Consumer\n(Postman, backend service, etc.)"]
+### Basic Overview Diagram
+<img width="665" height="556" alt="Image" src="https://github.com/user-attachments/assets/2cf0ce80-12d9-4bd0-8cab-ace6d4313ce1" />
 
-    subgraph GW["notificationservice — API Gateway"]
-        API["/api/send-notification\n/api/v1/users\n/api/v1/templates"]
-        Validate["Validate request\n+ assign priority\n(Redis cache → Template DB fallback)"]
-    end
-
-    subgraph KAFKA1["Kafka — Priority Topics"]
-        P1["priority-1"]
-        P2["priority-2"]
-        P3["priority-3"]
-    end
-
-    subgraph PROC["NotificationProcessor\n(one instance per priority)"]
-        NP1["Processor P1"]
-        NP2["Processor P2"]
-        NP3["Processor P3"]
-        Logic["Resolve template →\ncheck preferences/quiet-hours →\nde-dup via notification_hash →\npersist to MySQL"]
-    end
-
-    subgraph KAFKA2["Kafka — Channel Topics"]
-        ET["email-topic"]
-        ST["sms-topic"]
-        WT["whatsapp-topic"]
-        PT["push-n-topic"]
-    end
-
-    subgraph CONSUMERS["Channel Consumers\n(circuit breaker + retry + DLT)"]
-        EC["EmailConsumer"] --> SG["SendGrid"]
-        SC["SMSConsumer"] --> TW1["Twilio SMS"]
-        WC["WhatsappConsumer"] --> TW2["Twilio WhatsApp"]
-        PC["PushNConsumer"] --> FCM["Firebase Cloud Messaging"]
-    end
-
-    DB[("MySQL\nusers · notifications ·\npreferences · templates ·\ndelivery_logs")]
-    REDIS[("Redis\ntemplate-priority cache")]
-
-    Client --> API --> Validate --> KAFKA1
-    Validate -. reads/writes .-> REDIS
-    P1 --> NP1
-    P2 --> NP2
-    P3 --> NP3
-    NP1 --> Logic
-    NP2 --> Logic
-    NP3 --> Logic
-    Logic <-. read/write .-> DB
-    Logic --> ET & ST & WT & PT
-    ET --> EC
-    ST --> SC
-    WT --> WC
-    PT --> PC
-    EC & SC & WC & PC -. status updates .-> DB
-```
+### Advanced Overview Diagram
+<img width="2816" height="1536" alt="Image" src="https://github.com/user-attachments/assets/15b7b7cf-292e-4500-80b9-299982a5ffb4" />
 
 **Why this shape?**
 - **Two Kafka hops instead of one** (priority topics → channel topics) decouples *"how urgent is this?"* from *"which channel does it go on?"* — a processor doesn't need to know anything about SendGrid vs Twilio, and a channel consumer doesn't need to know anything about priority queuing.
@@ -271,14 +221,14 @@ Kafka topics can be visually inspected via **Confluent Control Center** at `http
 
 > **Attach screenshots below** — one proof image per channel showing a successfully delivered notification (e.g. the received email, SMS, WhatsApp message, and push notification).
 
-### Email
+### PUSH Notification
 <img width="354" height="113" alt="Image" src="https://github.com/user-attachments/assets/359563bf-8f30-4572-8671-dde479b132a0" />
 
-### SMS
+### WhatsApp Notification
 <img width="1084" height="1582" alt="Image" src="https://github.com/user-attachments/assets/b14c74e7-2697-4782-aa41-e6e811502ef4" />
 
-### WhatsApp
+### Email Notification
 <img width="1247" height="650" alt="Image" src="https://github.com/user-attachments/assets/e7b9f6c6-bb8b-4ebe-9447-96bb95e86851" />
 
-### Push Notification
+### SMS Notification
 <img width="1084" height="704" alt="Image" src="https://github.com/user-attachments/assets/f6c657c3-e1ee-4eed-9ddb-65c18595d9ea" />
