@@ -94,6 +94,6 @@ public class NotificationHelperService {
     }
 
     public String getEmailHash(EmailContent emailContent, Long userId) {
-        return DigestUtils.sha256Hex(currentPriority + "&" + emailContent.getEmailSubject() + "&" + emailContent.getMessage() + "&" + Arrays.toString(emailContent.getEmailAttachments()) + "&" + userId + "&" + LocalTime.now());
+        return DigestUtils.sha256Hex(currentPriority + "&" + emailContent.getSubject() + "&" + emailContent.getMessage() + "&" + "&" + userId + "&" + LocalTime.now());
     }
 }
