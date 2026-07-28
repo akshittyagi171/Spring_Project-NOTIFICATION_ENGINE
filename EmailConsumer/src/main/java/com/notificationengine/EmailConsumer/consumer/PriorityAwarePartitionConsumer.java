@@ -1,7 +1,7 @@
 package com.notificationengine.EmailConsumer.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.EmailConsumer.models.EmailRequest;
+import com.notificationengine.EmailConsumer.models.EmailContent;
 import com.notificationengine.EmailConsumer.service.EmailProcessingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,32 +34,21 @@ public class PriorityAwarePartitionConsumer {
 
     @RetryableTopic(
             attempts = "4",
-            backoff = @Backoff(
-                    delay = 5000,
-                    multiplier = 3.0,
-                    maxDelay = 60000
-            ),
+            backoff = @Backoff(delay = 5000, multiplier = 3.0, maxDelay = 60000),
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
             dltStrategy = DltStrategy.FAIL_ON_ERROR,
             include = { RuntimeException.class }
     )
-    @KafkaListener(
-            id = GROUP_ID,
-            topics = TOPIC,
-            groupId = GROUP_ID,
-            concurrency = "1"
-    )
+    @KafkaListener(id = GROUP_ID, topics = TOPIC, groupId = GROUP_ID, concurrency = "1")
     public void consume(ConsumerRecord<String, String> record,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
 
         log.debug("Record Intercepted from Partition: {}, Offset: {}", partition, record.offset());
-
         activeMessageCounts.computeIfAbsent(partition, k -> new AtomicLong(0)).incrementAndGet();
 
         try {
             evaluatePriorityThrottling(partition);
-            EmailRequest request = objectMapper.readValue(record.value(), EmailRequest.class);
-
+            EmailContent request = objectMapper.readValue(record.value(), EmailContent.class);
             emailProcessingService.processEmail(request);
 
         } catch (Exception e) {
@@ -97,7 +86,7 @@ public class PriorityAwarePartitionConsumer {
         log.error("CRITICAL AUDIT: Final retry exhausted on consumer pipelines. Processing permanent failure tracking. Reason: {}", exceptionMessage);
 
         try {
-            EmailRequest request = objectMapper.readValue(record.value(), EmailRequest.class);
+            EmailContent request = objectMapper.readValue(record.value(), EmailContent.class);
 
             if (request != null && request.getNotificationId() != null) {
                 emailProcessingService.handlePermanentFailure(request.getNotificationId(), exceptionMessage);

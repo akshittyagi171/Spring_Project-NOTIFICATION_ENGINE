@@ -1,0 +1,33 @@
+package com.notificationengine.EmailConsumer.models;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+import java.util.Map;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class EmailContent {
+    private Long notificationId;
+    private String emailId;
+    private String templateName;
+    private Map<String, String> placeholders;
+    private String message; // This will now contain the full HTML string
+    private String subject;
+    private List<EmailAttachment> attachments;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class EmailAttachment {
+        private String type;
+        private String url;
+        private String filename;
+    }
+}

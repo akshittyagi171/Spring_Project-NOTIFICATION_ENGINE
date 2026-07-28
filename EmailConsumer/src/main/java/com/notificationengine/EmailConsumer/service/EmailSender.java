@@ -1,6 +1,6 @@
 package com.notificationengine.EmailConsumer.service;
 
-import com.notificationengine.EmailConsumer.models.EmailRequest;
+import com.notificationengine.EmailConsumer.models.EmailContent;
 import com.notificationengine.EmailConsumer.models.SendEmailResponse;
 import com.sendgrid.Method;
 import com.sendgrid.Request;
@@ -19,6 +19,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -27,28 +28,29 @@ public class EmailSender {
 
     private final SendGrid sendGridClient;
     private final RestTemplate restTemplate;
-    private final EmailTemplateEngine emailTemplateEngine;
 
     @Value("${spring.sendgrid.from-email}")
     private String fromEmailAddress;
 
-    public SendEmailResponse sendEmail(EmailRequest emailRequest) {
-        log.info("Initiating SendGrid processing block context for Notification ID: {}", emailRequest.getNotificationId());
+    public SendEmailResponse sendEmail(EmailContent emailContent) {
+        log.info("Initiating SendGrid processing block context for Notification ID: {}", emailContent.getNotificationId());
 
         Email from = new Email(fromEmailAddress);
-        String subject = emailRequest.getEmailSubject();
-        Email to = new Email(emailRequest.getEmailId());
+        String subject = emailContent.getSubject();
+        Email to = new Email(emailContent.getEmailId());
 
-        String htmlBody = emailTemplateEngine.buildHtmlTemplate(emailRequest.getMessage(), subject);
-        Content content = new Content("text/html", htmlBody);
+        // The 'message' now directly contains the fully processed HTML from the database template
+        Content content = new Content("text/html", emailContent.getMessage());
 
         Mail mail = new Mail(from, subject, to, content);
 
-        if (emailRequest.getEmailAttachments() != null && emailRequest.getEmailAttachments().length > 0) {
-            for (int i = 0; i < emailRequest.getEmailAttachments().length; i++) {
-                String assetUrl = emailRequest.getEmailAttachments()[i];
-                if (assetUrl != null && !assetUrl.trim().isEmpty()) {
-                    attachDynamicUrlAsset(mail, assetUrl, i);
+        // Process attachments using the new List of Objects
+        List<EmailContent.EmailAttachment> attachments = emailContent.getAttachments();
+        if (attachments != null && !attachments.isEmpty()) {
+            for (int i = 0; i < attachments.size(); i++) {
+                EmailContent.EmailAttachment attachmentDto = attachments.get(i);
+                if (attachmentDto.getUrl() != null && !attachmentDto.getUrl().trim().isEmpty()) {
+                    attachDynamicUrlAsset(mail, attachmentDto, i);
                 }
             }
         }
@@ -61,7 +63,7 @@ public class EmailSender {
 
             Response response = sendGridClient.api(request);
 
-            log.info("SendGrid Dispatch Logged - Status: {}, NotificationId: {}", response.getStatusCode(), emailRequest.getNotificationId());
+            log.info("SendGrid Dispatch Logged - Status: {}, NotificationId: {}", response.getStatusCode(), emailContent.getNotificationId());
 
             if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
                 return new SendEmailResponse(response.getStatusCode(), "Email accepted via SendGrid.");
@@ -74,39 +76,46 @@ public class EmailSender {
         }
     }
 
-    private void attachDynamicUrlAsset(Mail mail, String fileUrl, int index) {
+    private void attachDynamicUrlAsset(Mail mail, EmailContent.EmailAttachment attachmentDto, int index) {
         try {
-            log.info("Downloading external notification attachment asset resource from: {}", fileUrl);
+            log.info("Downloading external notification attachment asset resource from: {}", attachmentDto.getUrl());
 
-            ResponseEntity<byte[]> response = restTemplate.getForEntity(fileUrl, byte[].class);
+            ResponseEntity<byte[]> response = restTemplate.getForEntity(attachmentDto.getUrl(), byte[].class);
             byte[] fileBytes = response.getBody();
 
             if (fileBytes != null && fileBytes.length > 0) {
                 String base64Content = Base64.getEncoder().encodeToString(fileBytes);
 
-                String contentType = null;
-                if (response.getHeaders().getContentType() != null) {
-                    contentType = response.getHeaders().getContentType().toString();
-                    contentType = contentType.split(";")[0].trim();
+                // Prioritize the type provided in the DTO, fallback to HTTP headers, fallback to URL guessing
+                String contentType = attachmentDto.getType();
+                if (contentType == null || contentType.isEmpty()) {
+                    if (response.getHeaders().getContentType() != null) {
+                        contentType = response.getHeaders().getContentType().toString().split(";")[0].trim();
+                    }
                 }
 
                 if (contentType == null || contentType.isEmpty() || contentType.equals("application/octet-stream")) {
-                    contentType = determineMimeTypeFromUrl(fileUrl);
+                    contentType = determineMimeTypeFromUrl(attachmentDto.getUrl());
                 }
 
-                String extension = determineExtensionFromMimeType(contentType);
+                // Prioritize filename from DTO, fallback to generated name
+                String filename = attachmentDto.getFilename();
+                if (filename == null || filename.isBlank()) {
+                    String extension = determineExtensionFromMimeType(contentType);
+                    filename = "attachment_" + (index + 1) + "." + extension;
+                }
 
-                Attachments attachment = new Attachments();
-                attachment.setContent(base64Content);
-                attachment.setType(contentType);
-                attachment.setFilename("attachment_" + (index + 1) + "." + extension);
-                attachment.setDisposition("attachment");
+                Attachments sgAttachment = new Attachments();
+                sgAttachment.setContent(base64Content);
+                sgAttachment.setType(contentType);
+                sgAttachment.setFilename(filename);
+                sgAttachment.setDisposition("attachment");
 
-                mail.addAttachments(attachment);
-                log.info("Successfully bound downloaded binary asset to SendGrid envelope. Type: {}, Ext: {}", contentType, extension);
+                mail.addAttachments(sgAttachment);
+                log.info("Successfully bound downloaded binary asset to SendGrid envelope. Filename: {}, Type: {}", filename, contentType);
             }
         } catch (Exception ex) {
-            log.error("Resilient fallback isolated: Unable to attach asset source from metadata URL link: {}", fileUrl, ex);
+            log.error("Resilient fallback isolated: Unable to attach asset source from metadata URL link: {}", attachmentDto.getUrl(), ex);
         }
     }
 
@@ -119,8 +128,7 @@ public class EmailSender {
             case "image/gif" -> "gif";
             case "application/pdf" -> "pdf";
             case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> "docx";
-            case "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ->
-                    "xlsx";
+            case "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> "xlsx";
             case "text/plain" -> "txt";
             case "text/html" -> "html";
             default -> "dat";

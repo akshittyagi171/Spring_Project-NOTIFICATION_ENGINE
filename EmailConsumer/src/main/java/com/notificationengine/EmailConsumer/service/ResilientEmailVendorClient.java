@@ -1,7 +1,7 @@
 package com.notificationengine.EmailConsumer.service;
 
+import com.notificationengine.EmailConsumer.models.EmailContent;
 import com.notificationengine.EmailConsumer.models.SendEmailResponse;
-import com.notificationengine.EmailConsumer.models.EmailRequest;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +18,9 @@ public class ResilientEmailVendorClient {
 
     @Retry(name = RESILIENCE_INSTANCE)
     @CircuitBreaker(name = RESILIENCE_INSTANCE, fallbackMethod = "fallbackEmailVendorCall")
-    public SendEmailResponse sendEmailWithResilience(EmailRequest emailRequest) {
-        log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", emailRequest.getNotificationId());
-        SendEmailResponse response = emailSender.sendEmail(emailRequest);
+    public SendEmailResponse sendEmailWithResilience(EmailContent emailContent) {
+        log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", emailContent.getNotificationId());
+        SendEmailResponse response = emailSender.sendEmail(emailContent);
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
             response.setMessage("Email Delivered Successfully");
@@ -30,7 +30,7 @@ public class ResilientEmailVendorClient {
         throw new RuntimeException("Vendor endpoint returned non-2xx response status code: " + response.getStatus());
     }
 
-    public SendEmailResponse fallbackEmailVendorCall(EmailRequest EmailRequest, Throwable throwable) {
+    public SendEmailResponse fallbackEmailVendorCall(EmailContent emailContent, Throwable throwable) {
         log.error("Circuit tripped or backend processing failed over. Reason: {}", throwable.getMessage());
         SendEmailResponse failureResponse = new SendEmailResponse();
         failureResponse.setStatus(503);
