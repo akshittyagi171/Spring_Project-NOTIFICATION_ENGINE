@@ -1,17 +1,11 @@
 package com.notificationengine.NotificationProcessor.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.NotificationProcessor.models.dtos.Content;
-import com.notificationengine.NotificationProcessor.models.dtos.NotificationRequest;
-import com.notificationengine.NotificationProcessor.models.dtos.PushNotification;
+import com.notificationengine.NotificationProcessor.models.dtos.content.*;
+import com.notificationengine.NotificationProcessor.models.dtos.request.*;
 import com.notificationengine.NotificationProcessor.models.enums.Channel;
-import com.notificationengine.NotificationProcessor.models.requests.EmailRequest;
-import com.notificationengine.NotificationProcessor.models.requests.PushNRequest;
-import com.notificationengine.NotificationProcessor.models.requests.SmsRequest;
 import com.notificationengine.NotificationProcessor.models.db.Template;
 import com.notificationengine.NotificationProcessor.models.db.User;
-import com.notificationengine.NotificationProcessor.models.requests.WhatsAppRequest;
 import com.notificationengine.NotificationProcessor.repo.TemplateRepository;
 import com.notificationengine.NotificationProcessor.repo.UserRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
@@ -28,12 +22,13 @@ import java.util.Map;
 @Service
 @Slf4j
 public class NotificationProcessingService {
-    ObjectMapper objectMapper;
-    TemplateRepository templateRepository;
-    UserRepository userRepository;
-    SendNotificationService sendNotificationService;
 
-    public NotificationProcessingService(ObjectMapper objectMapper,TemplateRepository templateRepository, UserRepository userRepository, SendNotificationService sendNotificationService){
+    private final ObjectMapper objectMapper;
+    private final TemplateRepository templateRepository;
+    private final UserRepository userRepository;
+    private final SendNotificationService sendNotificationService;
+
+    public NotificationProcessingService(ObjectMapper objectMapper, TemplateRepository templateRepository, UserRepository userRepository, SendNotificationService sendNotificationService) {
         this.objectMapper = objectMapper;
         this.templateRepository = templateRepository;
         this.userRepository = userRepository;
@@ -41,157 +36,199 @@ public class NotificationProcessingService {
     }
 
     public void processNotification(NotificationRequest notificationRequest) {
+        ContentRequest contentRequest = notificationRequest.getContent();
 
-        if (notificationRequest.getContent().isUsingTemplates()){
-            prepareMessageFromTemplate(notificationRequest);
-        }
+        // 1. Resolve templates for each channel independently before looping users
+        resolveTemplatesForChannels(contentRequest);
 
-        //Channel validation done at Notification Service
-        ArrayList<Channel> channels = getChannels(notificationRequest.getChannels());
-        Long userId = Long.parseLong(notificationRequest.getRecipient().getUserId());
-        try {
-            //Get user from DB
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> {
-                        log.error("User with userId: {} Not found", userId);
-                        return new UserPrincipalNotFoundException("User with userId: " + userId + " Not found");
-                    });
+        List<Channel> channels = getChannels(notificationRequest.getChannels());
 
-            if(channels.contains(Channel.email)){
-                try {
-                    prepareAndSendEmailNotification(notificationRequest, user.getEmail(), user);
-                } catch (Exception exception){
-                    log.error("Unexpected Exception while processing Email Notification Request: {}", notificationRequest);
-                    log.error("Exception at Email: {}", exception.toString());
-                }
+        // 2. Loop through all recipients in the batch
+        for (RecipientRequest recipient : notificationRequest.getRecipients()) {
+            if (recipient.getUserId() == null || recipient.getUserId().isBlank()) {
+                log.warn("Skipping recipient with no valid userId.");
+                continue;
             }
-            if(channels.contains(Channel.sms)){
-                try{
-                    prepareAndSendSMSNotification(notificationRequest.getContent().getMessage(),user.getPhone(),user);
-                }catch (Exception exception){
-                    log.error("Unexpected Exception while processing SMS Notification Request: {}", notificationRequest);
-                    log.error("Exception at SMS: {}", exception.toString());
-                }
 
-            }
-            if(channels.contains(Channel.whatsapp)){
-                try{
-                    prepareAndSendWhatsAppNotification(notificationRequest, user.getPhone(), user);
-                }catch (Exception exception){
-                    log.error("Unexpected Exception while processing WhatsApp Notification Request: {}", notificationRequest);
-                    log.error("Exception at WhatsApp: {}", exception.toString());
+            Long userId = Long.parseLong(recipient.getUserId());
+            try {
+                User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new UserPrincipalNotFoundException("User with userId: " + userId + " Not found"));
+
+                // 3. Dispatch to requested and present channels
+                if (channels.contains(Channel.email) && contentRequest.getEmail() != null) {
+                    safeExecute(() -> prepareAndSendEmailNotification(contentRequest.getEmail(), user), "Email");
+                }
+                if (channels.contains(Channel.sms) && contentRequest.getSms() != null) {
+                    safeExecute(() -> prepareAndSendSMSNotification(contentRequest.getSms(), user), "SMS");
+                }
+                if (channels.contains(Channel.whatsapp) && contentRequest.getWhatsapp() != null) {
+                    safeExecute(() -> prepareAndSendWhatsAppNotification(contentRequest.getWhatsapp(), user), "WhatsApp");
+                }
+                if (channels.contains(Channel.push) && contentRequest.getPush() != null) {
+                    safeExecute(() -> prepareAndSendPushNotification(contentRequest.getPush(), user), "Push");
                 }
 
+            } catch (UserPrincipalNotFoundException e) {
+                log.error("User with userId: {} Not found for Notification Request", userId);
             }
-            if(channels.contains(Channel.push)){
-                try{
-                    prepareAndSendPushNotification(notificationRequest,user);
-                }catch (Exception exception){
-                    log.error("Unexpected Exception while processing Push Notification Request: {}", notificationRequest);
-                    log.error("Exception at Push: {}", exception.toString());
-                }
-            }
-        } catch (UserPrincipalNotFoundException e) {
-            log.error("User with userId: {} Not found for Notification Request: {}", userId, notificationRequest);
         }
     }
 
-    private void prepareMessageFromTemplate(NotificationRequest notificationRequest) {
-        String templateName = notificationRequest.getContent().getTemplateName();
-        try{
-            Template usedTemplate = templateRepository.findByName(templateName)
-                    .orElseThrow(() -> {
-                        log.error("Template with name: {} Not found", templateName);
-                        return new TemplateNotFoundException("Template with name: " + templateName + " Not found");
-                    });
-            log.info("Used Template: {}", usedTemplate.toString());
-            Map<String,String> placeholdersInRequest = notificationRequest.getContent().getPlaceholders();
-            String[] requiredPlaceholders = objectMapper.readValue(usedTemplate.getPlaceholders(),String[].class);
+    private void resolveTemplatesForChannels(ContentRequest contentRequest) {
+        if (contentRequest.getEmail() != null && contentRequest.getEmail().getTemplateName() != null) {
+            contentRequest.getEmail().setMessage(resolveSingleTemplate(contentRequest.getEmail().getTemplateName(), contentRequest.getEmail().getPlaceholders()));
+        }
+        if (contentRequest.getWhatsapp() != null && contentRequest.getWhatsapp().getTemplateName() != null) {
+            contentRequest.getWhatsapp().setMessage(resolveSingleTemplate(contentRequest.getWhatsapp().getTemplateName(), contentRequest.getWhatsapp().getPlaceholders()));
+        }
+        if (contentRequest.getPush() != null && contentRequest.getPush().getTemplateName() != null) {
+            contentRequest.getPush().setMessage(resolveSingleTemplate(contentRequest.getPush().getTemplateName(), contentRequest.getPush().getPlaceholders()));
+        }
+        if (contentRequest.getSms() != null && contentRequest.getSms().getTemplateName() != null) {
+            contentRequest.getSms().setMessage(resolveSingleTemplate(contentRequest.getSms().getTemplateName(), contentRequest.getSms().getPlaceholders()));
+        }
+    }
 
-            String updatedMessage = replacePlaceholdersInMessageContent(usedTemplate.getContent(),placeholdersInRequest,requiredPlaceholders);
-            notificationRequest.getContent().setMessage(updatedMessage);
-            log.info("Updated message: {}", updatedMessage);
-        } catch (TemplateNotFoundException | PlaceholderNotFoundInRequestException e){
-            log.error("{} For notificationRequest: {}", e, notificationRequest);
-        } catch (JsonProcessingException e) {
-            log.error("Error parsing String placeholders to Json from usedTemplate. {} For notificationRequest: {}", e, notificationRequest);
+    private String resolveSingleTemplate(String templateName, Map<String, String> placeholders) {
+        try {
+            Template usedTemplate = templateRepository.findByName(templateName)
+                    .orElseThrow(() -> new TemplateNotFoundException("Template: " + templateName + " Not found"));
+
+            String[] requiredPlaceholders = objectMapper.readValue(usedTemplate.getPlaceholders(), String[].class);
+            return replacePlaceholdersInMessageContent(usedTemplate.getContent(), placeholders, requiredPlaceholders);
+
+        } catch (Exception e) {
+            log.error("Failed to resolve template: {}", templateName, e);
+            return ""; // Fallback or throw based on your business requirement
         }
     }
 
     private String replacePlaceholdersInMessageContent(String content, Map<String, String> placeholdersInRequest, String[] requiredPlaceholders) throws PlaceholderNotFoundInRequestException {
-        for(String s: requiredPlaceholders){ //check all required placeholders exist in request
-            if(!placeholdersInRequest.containsKey(s)){
-                throw new PlaceholderNotFoundInRequestException("Value for "+s+" not found in the request for using content template");
+        if (placeholdersInRequest == null) placeholdersInRequest = Map.of();
+
+        for (String s : requiredPlaceholders) {
+            if (!placeholdersInRequest.containsKey(s)) {
+                throw new PlaceholderNotFoundInRequestException("Value for " + s + " not found in the request for using content template");
             }
-        }
-        for(String s: requiredPlaceholders){
-            content = content.replace("{"+s+"}",placeholdersInRequest.get(s));
+            content = content.replace("{" + s + "}", placeholdersInRequest.get(s));
         }
         return content;
     }
 
-    private void prepareAndSendPushNotification(NotificationRequest notificationRequest, User user) {
-        Content content = notificationRequest.getContent();
-        PushNotification pushNotification = content.getPushNotification();
-        PushNRequest pushNRequest = new PushNRequest(pushNotification.getTitle(),content.getMessage(),pushNotification.getAction().getUrl(), user.getFcmToken());
-        try{
-            sendNotificationService.sendPushNRequest(pushNRequest, user);
-        } catch (DuplicateNotificationFoundException duplicateNotificationFoundException){
-            log.error("Duplicate Push Notification Request. {}", duplicateNotificationFoundException.toString());
-        }
-    }
+    // --- Dispatchers mapped to new Content Objects ---
 
-    private void prepareAndSendSMSNotification(String message, String phone, User user) {
-        SmsRequest smsRequest = new SmsRequest(phone,message);
-        try{
-            sendNotificationService.sendSmsRequest(smsRequest, user);
-        }catch (DuplicateNotificationFoundException duplicateNotificationFoundException){
-            log.error("Duplicate SMS Request. {}", duplicateNotificationFoundException.toString());
-        }
-    }
-
-    private void prepareAndSendWhatsAppNotification(NotificationRequest notificationRequest, String phone, User user) {
-        Content content = notificationRequest.getContent();
-
-        WhatsAppRequest whatsAppRequest = new WhatsAppRequest();
-        whatsAppRequest.setMobileNumber(phone);
-        whatsAppRequest.setMessage(content.getMessage());
-
-        whatsAppRequest.setTemplateName(content.getTemplateName());
-        whatsAppRequest.setPlaceholders(content.getPlaceholders());
-
-        if (content.getEmailAttachments() != null && content.getEmailAttachments().length > 0) {
-            whatsAppRequest.setMediaUrls(List.of(content.getEmailAttachments()));
-        }
+    private void prepareAndSendEmailNotification(EmailRequest inboundEmail, User user) {
+        EmailContent emailContent = EmailContent.builder()
+                .emailId(user.getEmail())
+                .templateName(inboundEmail.getTemplateName())
+                .placeholders(inboundEmail.getPlaceholders())
+                .message(inboundEmail.getMessage())
+                .subject(inboundEmail.getSubject())
+                .attachments(mapEmailAttachments(inboundEmail.getAttachments()))
+                .build();
 
         try {
-            sendNotificationService.sendWhatsAppRequest(whatsAppRequest, user);
-        } catch (DuplicateNotificationFoundException duplicateNotificationFoundException) {
-            log.error("Duplicate WhatsApp Request caught. Execution skipped: {}", duplicateNotificationFoundException.toString());
+            sendNotificationService.sendEmailRequest(emailContent, user);
+        } catch (DuplicateNotificationFoundException e) {
+            log.error("Duplicate Email Request: {}", e.getMessage());
         }
     }
 
-    private void prepareAndSendEmailNotification(NotificationRequest notificationRequest, String email, User user) {
-        Content content = notificationRequest.getContent();
+    private void prepareAndSendWhatsAppNotification(WhatsappRequest inboundWhatsapp, User user) {
+        WhatsappContent whatsAppContent = WhatsappContent.builder()
+                .mobileNumber(user.getPhone())
+                .templateName(inboundWhatsapp.getTemplateName())
+                .placeholders(inboundWhatsapp.getPlaceholders())
+                .message(inboundWhatsapp.getMessage())
+                .attachments(mapWhatsappAttachments(inboundWhatsapp.getAttachments()))
+                .build();
 
-        EmailRequest emailRequest = new EmailRequest(email,content.getMessage(),content.getEmailSubject(),content.getEmailAttachments());
-        try{
-            sendNotificationService.sendEmailRequest(emailRequest,user);
-        } catch (DuplicateNotificationFoundException duplicateNotificationFoundException){
-            log.error("Duplicate Email Request. {}", duplicateNotificationFoundException.toString());
+        try {
+            sendNotificationService.sendWhatsAppRequest(whatsAppContent, user);
+        } catch (DuplicateNotificationFoundException e) {
+            log.error("Duplicate WhatsApp Request: {}", e.getMessage());
         }
     }
 
-    private ArrayList<Channel> getChannels(String[] channels) {
-        ArrayList<Channel> channelList = new ArrayList<>();
-        for (String s: channels){
-            switch (s) {
-                case "email" -> channelList.add(Channel.email);
-                case "sms" -> channelList.add(Channel.sms);
-                case "push" -> channelList.add(Channel.push);
-                case "whatsapp" -> channelList.add(Channel.whatsapp);
+    private void prepareAndSendPushNotification(PushRequest inboundPush, User user) {
+        // Mapping Push Action explicitly to decouple the nested action object
+        PushContent.PushAction mappedAction = null;
+        if (inboundPush.getAction() != null) {
+            mappedAction = new PushContent.PushAction(
+                    inboundPush.getAction().getType(),
+                    inboundPush.getAction().getUrl()
+            );
+        }
+
+        PushContent pushNContent = PushContent.builder()
+                .fcmToken(user.getFcmToken())
+                .templateName(inboundPush.getTemplateName())
+                .placeholders(inboundPush.getPlaceholders())
+                .message(inboundPush.getMessage())
+                .title(inboundPush.getTitle())
+                .action(mappedAction)
+                .mediaUrl(inboundPush.getMediaUrl())
+                .build();
+
+        try {
+            sendNotificationService.sendPushNRequest(pushNContent, user);
+        } catch (DuplicateNotificationFoundException e) {
+            log.error("Duplicate Push Request: {}", e.getMessage());
+        }
+    }
+
+    private void prepareAndSendSMSNotification(SmsRequest inboundSms, User user) {
+        SmsContent smsContent = SmsContent.builder()
+                        .mobileNumber(user.getPhone())
+                        .templateName(inboundSms.getTemplateName())
+                        .placeholders(inboundSms.getPlaceholders())
+                        .message(inboundSms.getMessage())
+                        .build();
+
+        try {
+            sendNotificationService.sendSmsRequest(smsContent, user);
+        } catch (DuplicateNotificationFoundException e) {
+            log.error("Duplicate SMS Request: {}", e.getMessage());
+        }
+    }
+
+    private List<EmailContent.EmailAttachment> mapEmailAttachments(
+            List<EmailRequest.EmailAttachment> inbound) {
+        if (inbound == null) return null;
+        return inbound.stream()
+                .map(a -> new EmailContent.EmailAttachment(
+                        a.getType(), a.getUrl(), a.getFilename()))
+                .toList();
+    }
+
+    private List<WhatsappContent.WhatsappAttachment> mapWhatsappAttachments(
+            List<WhatsappRequest.WhatsappAttachment> inbound) {
+        if (inbound == null) return null;
+        return inbound.stream()
+                .map(a -> new WhatsappContent.WhatsappAttachment(
+                        a.getType(), a.getUrl(), a.getCaption()))
+                .toList();
+    }
+
+    private List<Channel> getChannels(List<String> channelsStr) {
+        List<Channel> channelList = new ArrayList<>();
+        if (channelsStr == null) return channelList;
+
+        for (String s : channelsStr) {
+            try {
+                channelList.add(Channel.valueOf(s.toLowerCase()));
+            } catch (IllegalArgumentException ignored) {
             }
         }
         return channelList;
+    }
+
+    private void safeExecute(Runnable runnable, String channelName) {
+        try {
+            runnable.run();
+        } catch (Exception e) {
+            log.error("Unexpected Exception while processing {} Notification: {}", channelName, e.getMessage(), e);
+        }
     }
 }

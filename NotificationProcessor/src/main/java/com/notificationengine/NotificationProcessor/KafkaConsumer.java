@@ -3,7 +3,8 @@ package com.notificationengine.NotificationProcessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.NotificationProcessor.models.dtos.NotificationRequest;
+import com.notificationengine.NotificationProcessor.models.dtos.request.NotificationRequest;
+import com.notificationengine.NotificationProcessor.models.dtos.content.NotificationContent;
 import com.notificationengine.NotificationProcessor.service.NotificationProcessingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -26,7 +27,7 @@ public class KafkaConsumer {
 
         try{
             JsonNode notificationRequestJson = mapper.readTree(notificationRequestString);
-            NotificationRequest notificationRequest = mapper.treeToValue(notificationRequestJson,NotificationRequest.class);
+            NotificationRequest notificationRequest = mapper.treeToValue(notificationRequestJson, NotificationRequest.class);
             log.debug("Successfully parsed Consumed Notification Request: {}", notificationRequest.toString());
             try{
                 notificationProcessingService.processNotification(notificationRequest);

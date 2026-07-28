@@ -1,0 +1,30 @@
+package com.notificationengine.NotificationProcessor.models.dtos.request;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.Map;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class PushRequest {
+    private String templateName;
+    private Map<String, String> placeholders;
+    private String message;
+    private String title;
+    private PushAction action;
+    private String mediaUrl;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PushAction {
+        private String type;
+        private String url;
+    }
+}

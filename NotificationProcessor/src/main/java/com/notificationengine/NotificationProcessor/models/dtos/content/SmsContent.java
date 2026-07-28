@@ -1,20 +1,20 @@
-package com.notificationengine.NotificationProcessor.models.requests;
+package com.notificationengine.NotificationProcessor.models.dtos.content;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
 import java.util.Map;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WhatsAppRequest {
-    private String mobileNumber;
-    private String message;
+public class SmsContent {
     private Long notificationId;
+    private String mobileNumber;
     private String templateName;
     private Map<String, String> placeholders;
-    private List<String> mediaUrls;
+    private String message;
 }

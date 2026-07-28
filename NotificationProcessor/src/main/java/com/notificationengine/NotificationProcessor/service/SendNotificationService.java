@@ -7,10 +7,10 @@ import com.notificationengine.NotificationProcessor.models.db.Notification;
 import com.notificationengine.NotificationProcessor.models.db.User;
 import com.notificationengine.NotificationProcessor.models.enums.Channel;
 import com.notificationengine.NotificationProcessor.models.enums.Status;
-import com.notificationengine.NotificationProcessor.models.requests.EmailRequest;
-import com.notificationengine.NotificationProcessor.models.requests.PushNRequest;
-import com.notificationengine.NotificationProcessor.models.requests.SmsRequest;
-import com.notificationengine.NotificationProcessor.models.requests.WhatsAppRequest;
+import com.notificationengine.NotificationProcessor.models.dtos.content.EmailContent;
+import com.notificationengine.NotificationProcessor.models.dtos.content.PushContent;
+import com.notificationengine.NotificationProcessor.models.dtos.content.SmsContent;
+import com.notificationengine.NotificationProcessor.models.dtos.content.WhatsappContent;
 import com.notificationengine.NotificationProcessor.repo.DeliveryLogRepository;
 import com.notificationengine.NotificationProcessor.repo.NotificationRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 
 import static com.notificationengine.NotificationProcessor.constants.Constants.*;
 
@@ -49,16 +48,16 @@ public class SendNotificationService {
         this.priorityRoutingKey = priorityRoutingKey;
     }
 
-    public void sendSmsRequest(SmsRequest smsRequest, User user) {
+    public void sendSmsRequest(SmsContent smsContent, User user) {
         Notification notification = null;
         try {
-            notification = notificationRepository.save(new Notification(user, Channel.sms, smsRequest.getMessage(), objectMapper.writeValueAsString(smsRequest), notificationHelperService.getSmsHash(smsRequest, user.getId())));
-            smsRequest.setNotificationId(notification.getId());
+            notification = notificationRepository.save(new Notification(user, Channel.sms, smsContent.getMessage(), objectMapper.writeValueAsString(smsContent), notificationHelperService.getSmsHash(smsContent, user.getId())));
+            smsContent.setNotificationId(notification.getId());
         } catch (JsonProcessingException e) {
             log.error("Exception parsing SMS requestContent to String: {}", e.toString());
         } catch (Exception e) {
             if (e.toString().contains("Duplicate entry")) {
-                throw new DuplicateNotificationFoundException("Duplicate notification request. " + smsRequest.toString());
+                throw new DuplicateNotificationFoundException("Duplicate notification request. " + smsContent.toString());
             } else {
                 throw e;
             }
@@ -67,21 +66,21 @@ public class SendNotificationService {
         boolean isSmsAllowed = notificationHelperService.isNotificationAllowed_PreferenceCheck(user.getId(), Channel.sms);
         if (isSmsAllowed) {
             try {
-                log.info("Preference: SMS is allowed acc to preferences. UserId: {}, SmsRequest: {}", user.getId(), smsRequest);
-                String notificationString = prepareMessage(smsRequest);
+                log.info("Preference: SMS is allowed acc to preferences. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
+                String notificationString = prepareMessage(smsContent);
                 kafkaTemplate.send(SMS_TOPIC, priorityRoutingKey, notificationString);
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.sms, Status.pending, "Scheduled to kafka"));
-                log.info("SMS sent to kafka. Delivery Log updated. UserId: {}, SmsRequest: {}", user.getId(), smsRequest);
+                log.info("SMS sent to kafka. Delivery Log updated. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
             } catch (Exception e) {
-                log.error("Failed to forward sms notification {} to Kafka: ", smsRequest, e);
+                log.error("Failed to forward sms notification {} to Kafka: ", smsContent, e);
             }
         } else {
-            log.info("Preference: Not sending SMS as per user preferences. UserId: {}, SmsRequest: {}", user.getId(), smsRequest);
+            log.info("Preference: Not sending SMS as per user preferences. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
             deliveryLogRepository.save(new DeliveryLog(notification, Channel.sms, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences"));
         }
     }
 
-    public void sendPushNRequest(PushNRequest pushNRequest, User user) {
+    public void sendPushNRequest(PushContent pushNRequest, User user) {
         Notification notification = null;
         try {
             notification = notificationRepository.save(new Notification(user, Channel.push, pushNRequest.getTitle() + pushNRequest.getMessage(), objectMapper.writeValueAsString(pushNRequest), notificationHelperService.getPushNHash(pushNRequest, user.getId())));
@@ -113,17 +112,17 @@ public class SendNotificationService {
         }
     }
 
-    public void sendEmailRequest(EmailRequest emailRequest, User user) {
+    public void sendEmailRequest(EmailContent emailContent, User user) {
         Notification notification = null;
         try {
-            notification = notificationRepository.save(new Notification(user, Channel.email, "emailSubject: " + emailRequest.getEmailSubject() + " message: " + emailRequest.getMessage() + " attachments: " + Arrays.toString(emailRequest.getEmailAttachments()),
-                    objectMapper.writeValueAsString(emailRequest), notificationHelperService.getEmailHash(emailRequest, user.getId())));
-            emailRequest.setNotificationId(notification.getId());
+            notification = notificationRepository.save(new Notification(user, Channel.email, "emailSubject: " + emailContent.getSubject() + " message: " + emailContent.getMessage(),
+                    objectMapper.writeValueAsString(emailContent), notificationHelperService.getEmailHash(emailContent, user.getId())));
+            emailContent.setNotificationId(notification.getId());
         } catch (JsonProcessingException e) {
             log.error("Exception parsing Email requestContent to String: {}", e.toString());
         } catch (Exception e) {
             if (e.toString().contains("Duplicate entry")) {
-                throw new DuplicateNotificationFoundException("Duplicate notification request. " + emailRequest.toString());
+                throw new DuplicateNotificationFoundException("Duplicate notification request. " + emailContent.toString());
             } else {
                 throw e;
             }
@@ -132,30 +131,30 @@ public class SendNotificationService {
         boolean isEmailAllowed = notificationHelperService.isNotificationAllowed_PreferenceCheck(user.getId(), Channel.email);
         if (isEmailAllowed) {
             try {
-                log.info("Preference: Email is allowed acc to preferences. UserId: {}, EmailRequest: {}", user.getId(), emailRequest);
-                String notificationString = prepareMessage(emailRequest);
+                log.info("Preference: Email is allowed acc to preferences. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
+                String notificationString = prepareMessage(emailContent);
                 kafkaTemplate.send(EMAIL_TOPIC, priorityRoutingKey, notificationString);
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.email, Status.pending, "Scheduled to kafka"));
-                log.info("Email is sent to kafka. Delivery Log updated. UserId: {}, EmailRequest: {}", user.getId(), emailRequest);
+                log.info("Email is sent to kafka. Delivery Log updated. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
             } catch (Exception e) {
-                log.error("Failed to forward Email notification {} to Kafka: ", emailRequest, e);
+                log.error("Failed to forward Email notification {} to Kafka: ", emailContent, e);
             }
         } else {
-            log.info("Preference: Not sending Email Notification as per user preferences. UserId: {}, EmailRequest: {}", user.getId(), emailRequest);
+            log.info("Preference: Not sending Email Notification as per user preferences. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
             deliveryLogRepository.save(new DeliveryLog(notification, Channel.email, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences"));
         }
     }
 
-    public void sendWhatsAppRequest(WhatsAppRequest whatsAppRequest, User user) {
+    public void sendWhatsAppRequest(WhatsappContent whatsAppContent, User user) {
         Notification notification = null;
         try {
-            notification = notificationRepository.save(new Notification(user, Channel.whatsapp, whatsAppRequest.getMessage(), objectMapper.writeValueAsString(whatsAppRequest), notificationHelperService.getWhatsAppHash(whatsAppRequest, user.getId())));
-            whatsAppRequest.setNotificationId(notification.getId());
+            notification = notificationRepository.save(new Notification(user, Channel.whatsapp, whatsAppContent.getMessage(), objectMapper.writeValueAsString(whatsAppContent), notificationHelperService.getWhatsAppHash(whatsAppContent, user.getId())));
+            whatsAppContent.setNotificationId(notification.getId());
         } catch (JsonProcessingException e) {
             log.error("Exception parsing WhatsApp requestContent to String: {}", e.toString());
         } catch (Exception e) {
             if (e.toString().contains("Duplicate entry")) {
-                throw new DuplicateNotificationFoundException("Duplicate notification request. " + whatsAppRequest.toString());
+                throw new DuplicateNotificationFoundException("Duplicate notification request. " + whatsAppContent.toString());
             } else {
                 throw e;
             }
@@ -164,16 +163,16 @@ public class SendNotificationService {
         boolean isWhatsAppAllowed = notificationHelperService.isNotificationAllowed_PreferenceCheck(user.getId(), Channel.whatsapp);
         if (isWhatsAppAllowed) {
             try {
-                log.info("Preference: WhatsApp is allowed acc to preferences. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppRequest);
-                String notificationString = prepareMessage(whatsAppRequest);
+                log.info("Preference: WhatsApp is allowed acc to preferences. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
+                String notificationString = prepareMessage(whatsAppContent);
                 kafkaTemplate.send(WHATSAPP_TOPIC, priorityRoutingKey, notificationString);
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.whatsapp, Status.pending, "Scheduled to kafka"));
-                log.info("WhatsApp sent to kafka. Delivery Log updated. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppRequest);
+                log.info("WhatsApp sent to kafka. Delivery Log updated. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
             } catch (Exception e) {
-                log.error("Failed to forward WhatsApp notification {} to Kafka: ", whatsAppRequest, e);
+                log.error("Failed to forward WhatsApp notification {} to Kafka: ", whatsAppContent, e);
             }
         } else {
-            log.info("Preference: Not sending WhatsApp as per user preferences. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppRequest);
+            log.info("Preference: Not sending WhatsApp as per user preferences. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
             deliveryLogRepository.save(new DeliveryLog(notification, Channel.whatsapp, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences"));
         }
     }

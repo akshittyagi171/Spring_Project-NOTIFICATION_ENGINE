@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notificationengine.NotificationProcessor.models.db.Preference;
 import com.notificationengine.NotificationProcessor.models.enums.Channel;
-import com.notificationengine.NotificationProcessor.models.requests.EmailRequest;
-import com.notificationengine.NotificationProcessor.models.requests.PushNRequest;
-import com.notificationengine.NotificationProcessor.models.requests.SmsRequest;
-import com.notificationengine.NotificationProcessor.models.requests.WhatsAppRequest;
+import com.notificationengine.NotificationProcessor.models.dtos.content.EmailContent;
+import com.notificationengine.NotificationProcessor.models.dtos.content.PushContent;
+import com.notificationengine.NotificationProcessor.models.dtos.content.SmsContent;
+import com.notificationengine.NotificationProcessor.models.dtos.content.WhatsappContent;
 import com.notificationengine.NotificationProcessor.repo.PreferenceRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.PreferenceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -81,19 +81,19 @@ public class NotificationHelperService {
         }
     }
 
-    public String getSmsHash(SmsRequest smsRequest, Long userId) {
-        return DigestUtils.sha256Hex(currentPriority + "&" + smsRequest.getMessage() + "&" + smsRequest.getMobileNumber() + "&" + userId + "&" + LocalTime.now());
+    public String getSmsHash(SmsContent smsContent, Long userId) {
+        return DigestUtils.sha256Hex(currentPriority + "&" + smsContent.getMessage() + "&" + smsContent.getMobileNumber() + "&" + userId + "&" + LocalTime.now());
     }
 
-    public String getWhatsAppHash(WhatsAppRequest whatsAppRequest, Long userId) {
-        return DigestUtils.sha256Hex(currentPriority + "&" + whatsAppRequest.getMessage() + "&" + whatsAppRequest.getMobileNumber() + "&" + userId + "&" + LocalTime.now());
+    public String getWhatsAppHash(WhatsappContent whatsAppContent, Long userId) {
+        return DigestUtils.sha256Hex(currentPriority + "&" + whatsAppContent.getMessage() + "&" + whatsAppContent.getMobileNumber() + "&" + userId + "&" + LocalTime.now());
     }
 
-    public String getPushNHash(PushNRequest pushNRequest, Long userId) {
+    public String getPushNHash(PushContent pushNRequest, Long userId) {
         return DigestUtils.sha256Hex(currentPriority + "&" + pushNRequest.getTitle() + "&" + pushNRequest.getMessage() + "&" + pushNRequest.getAction() + "&" + userId + "&" + LocalTime.now());
     }
 
-    public String getEmailHash(EmailRequest emailRequest, Long userId) {
-        return DigestUtils.sha256Hex(currentPriority + "&" + emailRequest.getEmailSubject() + "&" + emailRequest.getMessage() + "&" + Arrays.toString(emailRequest.getEmailAttachments()) + "&" + userId + "&" + LocalTime.now());
+    public String getEmailHash(EmailContent emailContent, Long userId) {
+        return DigestUtils.sha256Hex(currentPriority + "&" + emailContent.getEmailSubject() + "&" + emailContent.getMessage() + "&" + Arrays.toString(emailContent.getEmailAttachments()) + "&" + userId + "&" + LocalTime.now());
     }
 }
