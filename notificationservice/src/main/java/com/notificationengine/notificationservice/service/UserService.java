@@ -6,11 +6,14 @@ import com.notificationengine.notificationservice.models.db.User;
 import com.notificationengine.notificationservice.models.dtos.PreferenceUpdateRequest;
 import com.notificationengine.notificationservice.models.dtos.UserCreateRequest;
 import com.notificationengine.notificationservice.models.dtos.UserCreateResponse;
+import com.notificationengine.notificationservice.models.dtos.request.RecipientRequest;
+import com.notificationengine.notificationservice.models.dtos.response.RecipientResponse;
 import com.notificationengine.notificationservice.models.enums.Channel;
 import com.notificationengine.notificationservice.repo.PreferenceRepository;
 import com.notificationengine.notificationservice.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ public class UserService {
     private final PreferenceRepository preferenceRepository;
     private final RedisTemplate<Object, Object> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final UserService self;
 
     @Value("${app.cache.user.ttl-hours:24}")
     private long userCacheTtlHours;
@@ -38,11 +42,13 @@ public class UserService {
     public UserService(UserRepository userRepository,
                        PreferenceRepository preferenceRepository,
                        RedisTemplate<Object, Object> redisTemplate,
-                       ObjectMapper objectMapper) {
+                       ObjectMapper objectMapper,
+                       @Lazy UserService self) {
         this.userRepository = userRepository;
         this.preferenceRepository = preferenceRepository;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
+        this.self = self;
     }
 
     @Transactional
@@ -161,6 +167,57 @@ public class UserService {
         } catch (Exception e) {
             log.warn("Isolated Warning: Failed to clean up operational cache layers: {}", e.getMessage());
         }
+    }
+
+    public List<RecipientResponse> processRecipients(List<RecipientRequest> requests) {
+        List<RecipientResponse> responses = new ArrayList<>();
+
+        for (RecipientRequest req : requests) {
+            // 1. If User ID is provided, treat as existing user
+            if (req.getUserId() != null && !req.getUserId().isBlank()) {
+                responses.add(RecipientResponse.builder()
+                        .userId(req.getUserId())
+                        .isNewUser(false)
+                        .name(req.getName())
+                        .email(req.getEmail())
+                        .phone(req.getPhone())
+                        .build());
+                continue;
+            }
+
+            // 2. Validate Email
+            if (req.getEmail() == null || req.getEmail().isBlank()) {
+                log.warn("Skipping recipient creation: No UserId or Email provided for recipient: {}", req.getName());
+                continue;
+            }
+
+            UserCreateRequest createReq = new UserCreateRequest();
+            createReq.setName(req.getName());
+            createReq.setEmail(req.getEmail());
+            createReq.setPhone(req.getPhone());
+            createReq.setFcmToken(req.getFcmToken());
+
+            try {
+                // 3. Call via the proxy ('self')!
+                // Now @Transactional on createOrFindUser executes in its own isolated transaction.
+                UserCreateResponse userResult = self.createOrFindUser(createReq);
+
+                responses.add(RecipientResponse.builder()
+                        .userId(userResult.getId().toString())
+                        .isNewUser("CREATED".equals(userResult.getStatus()))
+                        .name(req.getName())
+                        .email(req.getEmail())
+                        .phone(req.getPhone())
+                        .build());
+
+            } catch (Exception e) {
+                // If one user fails to save (e.g., DB constraint), we catch it here.
+                // The loop continues processing the rest of the batch successfully.
+                log.error("Failed to process recipient {}: {}", req.getEmail(), e.getMessage());
+            }
+        }
+
+        return responses;
     }
 
     private List<Preference> createDefaultPreferencesList(User user) {
