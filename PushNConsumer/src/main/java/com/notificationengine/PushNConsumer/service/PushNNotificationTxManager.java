@@ -31,7 +31,7 @@ public class PushNNotificationTxManager {
         notificationRepository.save(notification);
         log.info("Notification status tracking updated to SENT for ID: {}", notificationId);
 
-        DeliveryLog logEntry = new DeliveryLog(notification, Channel.push, Status.sent, "Dispatched successfully via Twilio channels.");
+        DeliveryLog logEntry = new DeliveryLog(notification, Channel.push, Status.sent, "Dispatched successfully via FCM channels.");
         deliveryLogRepository.save(logEntry);
     }
 

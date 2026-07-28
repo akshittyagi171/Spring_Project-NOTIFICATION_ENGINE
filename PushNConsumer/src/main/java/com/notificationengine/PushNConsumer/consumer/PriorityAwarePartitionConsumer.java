@@ -1,7 +1,7 @@
 package com.notificationengine.PushNConsumer.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.PushNConsumer.models.PushNRequest;
+import com.notificationengine.PushNConsumer.models.PushContent;
 import com.notificationengine.PushNConsumer.service.PushNProcessingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,28 +27,19 @@ import static com.notificationengine.PushNConsumer.constants.Constants.TOPIC;
 @Slf4j
 public class PriorityAwarePartitionConsumer {
 
-    private final PushNProcessingService whatsAppProcessingService;
+    private final PushNProcessingService pushNProcessingService;
     private final ObjectMapper objectMapper;
 
     private final ConcurrentHashMap<Integer, AtomicLong> activeMessageCounts = new ConcurrentHashMap<>();
 
     @RetryableTopic(
             attempts = "4",
-            backoff = @Backoff(
-                    delay = 5000,
-                    multiplier = 3.0,
-                    maxDelay = 60000
-            ),
+            backoff = @Backoff(delay = 5000, multiplier = 3.0, maxDelay = 60000),
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
             dltStrategy = DltStrategy.FAIL_ON_ERROR,
-            include = { RuntimeException.class }
+            include = {RuntimeException.class}
     )
-    @KafkaListener(
-            id = GROUP_ID,
-            topics = TOPIC,
-            groupId = GROUP_ID,
-            concurrency = "1"
-    )
+    @KafkaListener(id = GROUP_ID, topics = TOPIC, groupId = GROUP_ID, concurrency = "1")
     public void consume(ConsumerRecord<String, String> record,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
 
@@ -58,9 +49,10 @@ public class PriorityAwarePartitionConsumer {
 
         try {
             evaluatePriorityThrottling(partition);
-            PushNRequest request = objectMapper.readValue(record.value(), PushNRequest.class);
+            // Replaced PushNRequest with PushContent
+            PushContent request = objectMapper.readValue(record.value(), PushContent.class);
 
-            whatsAppProcessingService.processPushN(request);
+            pushNProcessingService.processPushN(request);
 
         } catch (Exception e) {
             log.error("Processing collapsed on partition entity offset target node: {}", record.offset(), e);
@@ -97,10 +89,10 @@ public class PriorityAwarePartitionConsumer {
         log.error("CRITICAL AUDIT: Final retry exhausted on consumer pipelines. Processing permanent failure tracking. Reason: {}", exceptionMessage);
 
         try {
-            PushNRequest request = objectMapper.readValue(record.value(), PushNRequest.class);
+            PushContent request = objectMapper.readValue(record.value(), PushContent.class);
 
             if (request != null && request.getNotificationId() != null) {
-                whatsAppProcessingService.handlePermanentFailure(request.getNotificationId(), exceptionMessage);
+                pushNProcessingService.handlePermanentFailure(request.getNotificationId(), exceptionMessage);
                 log.info("Successfully moved state to FAILED for notification ID: {}", request.getNotificationId());
             } else {
                 log.error("Unable to extract notificationId from the raw DLT payload record.");

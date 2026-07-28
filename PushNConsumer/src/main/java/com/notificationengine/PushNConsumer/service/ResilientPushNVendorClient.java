@@ -1,7 +1,7 @@
 package com.notificationengine.PushNConsumer.service;
 
 import com.notificationengine.PushNConsumer.models.SendPushNResponse;
-import com.notificationengine.PushNConsumer.models.PushNRequest;
+import com.notificationengine.PushNConsumer.models.PushContent;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
@@ -18,19 +18,19 @@ public class ResilientPushNVendorClient {
 
     @Retry(name = RESILIENCE_INSTANCE)
     @CircuitBreaker(name = RESILIENCE_INSTANCE, fallbackMethod = "fallbackPushNVendorCall")
-    public SendPushNResponse sendWhatsAppWithResilience(PushNRequest pushNRequest) {
-        log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", pushNRequest.getNotificationId());
-        SendPushNResponse response = pushNSender.sendPushNotification(pushNRequest);
+    public SendPushNResponse sendPushNWithResilience(PushContent pushContent) {
+        log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", pushContent.getNotificationId());
+        SendPushNResponse response = pushNSender.sendPushNotification(pushContent);
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
-            response.setMessage("WhatsApp Delivered Successfully");
+            response.setMessage("Push Notification Delivered Successfully");
             return response;
         }
 
         throw new RuntimeException("Vendor endpoint returned non-2xx response status code: " + response.getStatus());
     }
 
-    public SendPushNResponse fallbackPushNVendorCall(PushNRequest pushNRequest, Throwable throwable) {
+    public SendPushNResponse fallbackPushNVendorCall(PushContent pushContent, Throwable throwable) {
         log.error("Circuit tripped or backend processing failed over. Reason: {}", throwable.getMessage());
         SendPushNResponse failureResponse = new SendPushNResponse();
         failureResponse.setStatus(503);

@@ -2,7 +2,7 @@ package com.notificationengine.PushNConsumer.service;
 
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.MessagingErrorCode;
-import com.notificationengine.PushNConsumer.models.PushNRequest;
+import com.notificationengine.PushNConsumer.models.PushContent;
 import com.notificationengine.PushNConsumer.models.SendPushNResponse;
 import com.notificationengine.PushNConsumer.repo.UserRepository;
 import lombok.AllArgsConstructor;
@@ -19,25 +19,36 @@ public class PushNSender {
 
     private UserRepository userRepository;
 
-    public SendPushNResponse sendPushNotification(PushNRequest pushNRequest) {
-        log.info("Initiating push notification delivery for notification ID: {}", pushNRequest.getNotificationId());
+    public SendPushNResponse sendPushNotification(PushContent pushContent) {
+        log.info("Initiating push notification delivery for notification ID: {}", pushContent.getNotificationId());
 
         try {
-            if (pushNRequest.getFcmToken() == null || pushNRequest.getFcmToken().isBlank()) {
-                log.warn("FCM Token is null or blank for Notification ID: {}", pushNRequest.getNotificationId());
+            if (pushContent.getFcmToken() == null || pushContent.getFcmToken().isBlank()) {
+                log.warn("FCM Token is null or blank for Notification ID: {}", pushContent.getNotificationId());
                 return new SendPushNResponse(400, "Bad Request: Missing FCM Token");
             }
 
-            Notification notification = Notification.builder()
-                    .setTitle(pushNRequest.getTitle())
-                    .setBody(pushNRequest.getMessage())
-                    .build();
+            // 1. Build the notification with Title and Body
+            Notification.Builder notifBuilder = Notification.builder()
+                    .setTitle(pushContent.getTitle())
+                    .setBody(pushContent.getMessage());
+
+            // 2. Attach the image directly if the URL is provided
+            if (pushContent.getMediaUrl() != null && !pushContent.getMediaUrl().isBlank()) {
+                notifBuilder.setImage(pushContent.getMediaUrl().trim());
+                log.info("Attached rich media URL to Push Notification ID: {}", pushContent.getNotificationId());
+            }
+
+            // 3. Extract the Deep Link URL for the action
+            String actionData = (pushContent.getAction() != null && pushContent.getAction().getUrl() != null)
+                    ? pushContent.getAction().getUrl()
+                    : "DEFAULT";
 
             Message firebaseMessage = Message.builder()
-                    .setToken(pushNRequest.getFcmToken().trim())
-                    .setNotification(notification)
-                    .putData("action", pushNRequest.getAction() != null ? pushNRequest.getAction() : "DEFAULT")
-                    .putData("notificationId", String.valueOf(pushNRequest.getNotificationId()))
+                    .setToken(pushContent.getFcmToken().trim())
+                    .setNotification(notifBuilder.build())
+                    .putData("action", actionData)
+                    .putData("notificationId", String.valueOf(pushContent.getNotificationId()))
                     .build();
 
             String responseId = FirebaseMessaging.getInstance().send(firebaseMessage);
@@ -49,9 +60,9 @@ public class PushNSender {
 
             if (errorCode == MessagingErrorCode.UNREGISTERED || errorCode == MessagingErrorCode.INVALID_ARGUMENT) {
                 log.error("Stale or Invalid FCM token detected for Notification ID: {}. Error Code: {}",
-                        pushNRequest.getNotificationId(), errorCode);
+                        pushContent.getNotificationId(), errorCode);
 
-                String targetToken = pushNRequest.getFcmToken().trim();
+                String targetToken = pushContent.getFcmToken().trim();
 
                 userRepository.findByFcmToken(targetToken)
                         .stream()
@@ -67,7 +78,7 @@ public class PushNSender {
             throw new RuntimeException("FCM Gateway temporary failure: " + e.getMessage(), e);
 
         } catch (Exception e) {
-            log.error("Critical internal failure during transmission setup for ID: {}", pushNRequest.getNotificationId(), e);
+            log.error("Critical internal failure during transmission setup for ID: {}", pushContent.getNotificationId(), e);
             throw new RuntimeException("Internal pipeline error: " + e.getMessage(), e);
         }
     }
