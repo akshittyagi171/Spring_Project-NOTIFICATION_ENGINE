@@ -1,14 +1,18 @@
 package com.notificationengine.NotificationProcessor;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notificationengine.NotificationProcessor.models.dtos.request.NotificationRequest;
-import com.notificationengine.NotificationProcessor.models.dtos.content.NotificationContent;
 import com.notificationengine.NotificationProcessor.service.NotificationProcessingService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.slf4j.MDC;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
+
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @Component
 @Slf4j
@@ -23,20 +27,24 @@ public class KafkaConsumer {
     }
 
     @KafkaListener(topics = "#{'${notification.processor.topic}'}")
-    public void consumeNotificationRequest(String notificationRequestString){
+    public void consumeNotificationRequest(ConsumerRecord<String, String> record,
+                                           @Header(value = "correlationId", required = false) byte[] correlationIdBytes){
 
-        try{
-            JsonNode notificationRequestJson = mapper.readTree(notificationRequestString);
+        String correlationId = correlationIdBytes != null
+                ? new String(correlationIdBytes, StandardCharsets.UTF_8)
+                : UUID.randomUUID().toString();
+
+        MDC.put("correlationId", correlationId);
+
+        try {
+            JsonNode notificationRequestJson = mapper.readTree(record.value());
             NotificationRequest notificationRequest = mapper.treeToValue(notificationRequestJson, NotificationRequest.class);
-            log.debug("Successfully parsed Consumed Notification Request: {}", notificationRequest.toString());
-            try{
-                notificationProcessingService.processNotification(notificationRequest);
-            } catch (Exception exception){
-                log.error("Unexpected Exception in NotificationProcessingService while processing Notification Request: {}", notificationRequest);
-                log.error("Exception: {}", exception.toString());
-            }
-        } catch (JsonProcessingException jsonProcessingException){
-            log.error("Error parsing kafka consumed message to JSON. Exception: \n {}", jsonProcessingException.toString());
+            notificationProcessingService.processNotification(notificationRequest);
+
+        } catch (Exception e) {
+            log.error("Unexpected Exception in NotificationProcessingService: {}", e.getMessage(), e);
+        } finally {
+            MDC.remove("correlationId");
         }
     }
 }

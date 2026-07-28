@@ -6,6 +6,7 @@ import com.notificationengine.PushNConsumer.service.PushNProcessingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.slf4j.MDC;
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
@@ -16,6 +17,8 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -41,8 +44,13 @@ public class PriorityAwarePartitionConsumer {
     )
     @KafkaListener(id = GROUP_ID, topics = TOPIC, groupId = GROUP_ID, concurrency = "1")
     public void consume(ConsumerRecord<String, String> record,
-                        @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
+                        @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+                        @Header(value = "correlationId", required = false) byte[] correlationIdBytes) {
 
+        String correlationId = correlationIdBytes != null
+                ? new String(correlationIdBytes, StandardCharsets.UTF_8)
+                : UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
         log.debug("Record Intercepted from Partition: {}, Offset: {}", partition, record.offset());
 
         activeMessageCounts.computeIfAbsent(partition, k -> new AtomicLong(0)).incrementAndGet();
@@ -59,6 +67,7 @@ public class PriorityAwarePartitionConsumer {
             throw new RuntimeException("Triggering Retries: " + e.getMessage(), e);
         } finally {
             activeMessageCounts.get(partition).decrementAndGet();
+            MDC.remove("correlationId");
         }
     }
 
@@ -85,7 +94,12 @@ public class PriorityAwarePartitionConsumer {
 
     @DltHandler
     public void handleDeadLetterQueue(ConsumerRecord<String, String> record,
-                                      @Header(KafkaHeaders.EXCEPTION_MESSAGE) String exceptionMessage) {
+                                      @Header(KafkaHeaders.EXCEPTION_MESSAGE) String exceptionMessage,
+                                      @Header(value = "correlationId", required = false) byte[] correlationIdBytes) {
+        String correlationId = correlationIdBytes != null
+                ? new String(correlationIdBytes, StandardCharsets.UTF_8)
+                : "UNKNOWN-TRACE";
+        MDC.put("correlationId", correlationId);
         log.error("CRITICAL AUDIT: Final retry exhausted on consumer pipelines. Processing permanent failure tracking. Reason: {}", exceptionMessage);
 
         try {
@@ -99,6 +113,9 @@ public class PriorityAwarePartitionConsumer {
             }
         } catch (Exception ex) {
             log.error("Failed to process status changes inside custom DLT wrapper flow: ", ex);
+        } finally {
+            // 2. Clean up Context
+            MDC.remove("correlationId");
         }
     }
 }

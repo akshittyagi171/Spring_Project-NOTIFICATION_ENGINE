@@ -15,10 +15,14 @@ import com.notificationengine.NotificationProcessor.repo.DeliveryLogRepository;
 import com.notificationengine.NotificationProcessor.repo.NotificationRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+
+import java.nio.charset.StandardCharsets;
 
 import static com.notificationengine.NotificationProcessor.constants.Constants.*;
 
@@ -68,7 +72,7 @@ public class SendNotificationService {
             try {
                 log.info("Preference: SMS is allowed acc to preferences. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
                 String notificationString = prepareMessage(smsContent);
-                kafkaTemplate.send(SMS_TOPIC, priorityRoutingKey, notificationString);
+                dispatchToKafkaWithTracing(SMS_TOPIC, priorityRoutingKey, notificationString);
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.sms, Status.pending, "Scheduled to kafka"));
                 log.info("SMS sent to kafka. Delivery Log updated. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
             } catch (Exception e) {
@@ -100,7 +104,7 @@ public class SendNotificationService {
             try {
                 log.info("Preference: PushN is allowed acc to preferences. UserId: {}, PushNRequest: {}", user.getId(), pushNRequest);
                 String notificationString = prepareMessage(pushNRequest);
-                kafkaTemplate.send(PUSH_N_TOPIC, priorityRoutingKey, notificationString);
+                dispatchToKafkaWithTracing(PUSH_N_TOPIC, priorityRoutingKey, notificationString);
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.push, Status.pending, "Scheduled to kafka"));
                 log.info("Push Notification sent to kafka. Delivery log updated. UserId: {}, PushNRequest: {}", user.getId(), pushNRequest);
             } catch (Exception e) {
@@ -133,7 +137,7 @@ public class SendNotificationService {
             try {
                 log.info("Preference: Email is allowed acc to preferences. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
                 String notificationString = prepareMessage(emailContent);
-                kafkaTemplate.send(EMAIL_TOPIC, priorityRoutingKey, notificationString);
+                dispatchToKafkaWithTracing(EMAIL_TOPIC, priorityRoutingKey, notificationString);
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.email, Status.pending, "Scheduled to kafka"));
                 log.info("Email is sent to kafka. Delivery Log updated. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
             } catch (Exception e) {
@@ -165,7 +169,7 @@ public class SendNotificationService {
             try {
                 log.info("Preference: WhatsApp is allowed acc to preferences. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
                 String notificationString = prepareMessage(whatsAppContent);
-                kafkaTemplate.send(WHATSAPP_TOPIC, priorityRoutingKey, notificationString);
+                dispatchToKafkaWithTracing(WHATSAPP_TOPIC, priorityRoutingKey, notificationString);
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.whatsapp, Status.pending, "Scheduled to kafka"));
                 log.info("WhatsApp sent to kafka. Delivery Log updated. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
             } catch (Exception e) {
@@ -179,5 +183,16 @@ public class SendNotificationService {
 
     private <T> String prepareMessage(T request) throws JsonProcessingException {
         return this.objectMapper.writeValueAsString(request);
+    }
+
+    private void dispatchToKafkaWithTracing(String topic, String routingKey, String payload) {
+        ProducerRecord<String, String> record = new ProducerRecord<>(topic, routingKey, payload);
+
+        String correlationId = MDC.get("correlationId");
+        if (correlationId != null) {
+            record.headers().add("correlationId", correlationId.getBytes(StandardCharsets.UTF_8));
+        }
+
+        kafkaTemplate.send(record);
     }
 }
