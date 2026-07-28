@@ -1,7 +1,7 @@
 package com.notificationengine.SMSConsumer.service;
 
 import com.notificationengine.SMSConsumer.models.SendSmsResponse;
-import com.notificationengine.SMSConsumer.models.SmsRequest;
+import com.notificationengine.SMSConsumer.models.SmsContent;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +18,9 @@ public class ResilientSmsVendorClient {
 
     @Retry(name = RESILIENCE_INSTANCE)
     @CircuitBreaker(name = RESILIENCE_INSTANCE, fallbackMethod = "fallbackSmsVendorCall")
-    public SendSmsResponse sendSmsWithResilience(SmsRequest smsRequest) {
-        log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", smsRequest.getNotificationId());
-        SendSmsResponse response = smsSender.sendSms(smsRequest);
+    public SendSmsResponse sendSmsWithResilience(SmsContent smsContent) {
+        log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", smsContent.getNotificationId());
+        SendSmsResponse response = smsSender.sendSms(smsContent);
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
             response.setMessage("SMS Delivered Successfully");
@@ -30,7 +30,7 @@ public class ResilientSmsVendorClient {
         throw new RuntimeException("Vendor endpoint returned non-2xx response status code: " + response.getStatus());
     }
 
-    public SendSmsResponse fallbackSmsVendorCall(SmsRequest smsRequest, Throwable throwable) {
+    public SendSmsResponse fallbackSmsVendorCall(SmsContent smsContent, Throwable throwable) {
         log.error("Circuit tripped or backend processing failed over. Reason: {}", throwable.getMessage());
         SendSmsResponse failureResponse = new SendSmsResponse();
         failureResponse.setStatus(503);
