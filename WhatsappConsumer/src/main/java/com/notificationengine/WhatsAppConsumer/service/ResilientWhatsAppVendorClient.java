@@ -1,7 +1,7 @@
 package com.notificationengine.WhatsAppConsumer.service;
 
 import com.notificationengine.WhatsAppConsumer.models.SendWhatsAppResponse;
-import com.notificationengine.WhatsAppConsumer.models.WhatsAppRequest;
+import com.notificationengine.WhatsAppConsumer.models.WhatsAppContent;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +18,9 @@ public class ResilientWhatsAppVendorClient {
 
     @Retry(name = RESILIENCE_INSTANCE)
     @CircuitBreaker(name = RESILIENCE_INSTANCE, fallbackMethod = "fallbackWhatsAppVendorCall")
-    public SendWhatsAppResponse sendWhatsAppWithResilience(WhatsAppRequest whatsAppRequest) {
-        log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", whatsAppRequest.getNotificationId());
-        SendWhatsAppResponse response = whatsAppSender.sendWhatsApp(whatsAppRequest);
+    public SendWhatsAppResponse sendWhatsAppWithResilience(WhatsAppContent whatsAppContent) {
+        log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", whatsAppContent.getNotificationId());
+        SendWhatsAppResponse response = whatsAppSender.sendWhatsApp(whatsAppContent);
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
             response.setMessage("WhatsApp Delivered Successfully");
@@ -30,7 +30,7 @@ public class ResilientWhatsAppVendorClient {
         throw new RuntimeException("Vendor endpoint returned non-2xx response status code: " + response.getStatus());
     }
 
-    public SendWhatsAppResponse fallbackWhatsAppVendorCall(WhatsAppRequest whatsAppRequest, Throwable throwable) {
+    public SendWhatsAppResponse fallbackWhatsAppVendorCall(WhatsAppContent whatsAppContent, Throwable throwable) {
         log.error("Circuit tripped or backend processing failed over. Reason: {}", throwable.getMessage());
         SendWhatsAppResponse failureResponse = new SendWhatsAppResponse();
         failureResponse.setStatus(503);

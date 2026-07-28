@@ -1,7 +1,7 @@
 package com.notificationengine.WhatsAppConsumer.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.WhatsAppConsumer.models.WhatsAppRequest;
+import com.notificationengine.WhatsAppConsumer.models.WhatsAppContent;
 import com.notificationengine.WhatsAppConsumer.service.WhatsAppProcessingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,21 +34,12 @@ public class PriorityAwarePartitionConsumer {
 
     @RetryableTopic(
             attempts = "4",
-            backoff = @Backoff(
-                    delay = 5000,
-                    multiplier = 3.0,
-                    maxDelay = 60000
-            ),
+            backoff = @Backoff(delay = 5000, multiplier = 3.0, maxDelay = 60000),
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
             dltStrategy = DltStrategy.FAIL_ON_ERROR,
             include = { RuntimeException.class }
     )
-    @KafkaListener(
-            id = GROUP_ID,
-            topics = TOPIC,
-            groupId = GROUP_ID,
-            concurrency = "1"
-    )
+    @KafkaListener(id = GROUP_ID, topics = TOPIC, groupId = GROUP_ID, concurrency = "1")
     public void consume(ConsumerRecord<String, String> record,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
 
@@ -58,8 +49,7 @@ public class PriorityAwarePartitionConsumer {
 
         try {
             evaluatePriorityThrottling(partition);
-            WhatsAppRequest request = objectMapper.readValue(record.value(), WhatsAppRequest.class);
-
+            WhatsAppContent request = objectMapper.readValue(record.value(), WhatsAppContent.class);
             whatsAppProcessingService.processWhatsApp(request);
 
         } catch (Exception e) {
@@ -97,7 +87,7 @@ public class PriorityAwarePartitionConsumer {
         log.error("CRITICAL AUDIT: Final retry exhausted on consumer pipelines. Processing permanent failure tracking. Reason: {}", exceptionMessage);
 
         try {
-            WhatsAppRequest request = objectMapper.readValue(record.value(), WhatsAppRequest.class);
+            WhatsAppContent request = objectMapper.readValue(record.value(), WhatsAppContent.class);
 
             if (request != null && request.getNotificationId() != null) {
                 whatsAppProcessingService.handlePermanentFailure(request.getNotificationId(), exceptionMessage);
