@@ -12,3 +12,7 @@ scrape_configs:
           - 'host.docker.internal:8091' # SMS Consumer
           - 'host.docker.internal:8092' # Push Consumer
           - 'host.docker.internal:8093' # WhatsApp Consumer
+
+  - job_name: 'kafka-exporter'
+    static_configs:
+      - targets: [ 'kafka-exporter:9308' ]

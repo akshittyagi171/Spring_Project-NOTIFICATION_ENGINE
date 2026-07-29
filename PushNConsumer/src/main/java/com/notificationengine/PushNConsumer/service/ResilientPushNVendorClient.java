@@ -4,6 +4,7 @@ import com.notificationengine.PushNConsumer.models.SendPushNResponse;
 import com.notificationengine.PushNConsumer.models.PushContent;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ public class ResilientPushNVendorClient {
 
     private final PushNSender pushNSender;
     private static final String RESILIENCE_INSTANCE = "fcmVendor";
+    private final MeterRegistry meterRegistry;
 
     @Retry(name = RESILIENCE_INSTANCE)
     @CircuitBreaker(name = RESILIENCE_INSTANCE, fallbackMethod = "fallbackPushNVendorCall")
@@ -24,6 +26,7 @@ public class ResilientPushNVendorClient {
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
             response.setMessage("Push Notification Delivered Successfully");
+            meterRegistry.counter("notification_vendor_result_total", "channel", "push", "status", "SUCCESS").increment();
             return response;
         }
 
@@ -32,6 +35,7 @@ public class ResilientPushNVendorClient {
 
     public SendPushNResponse fallbackPushNVendorCall(PushContent pushContent, Throwable throwable) {
         log.error("Circuit tripped or backend processing failed over. Reason: {}", throwable.getMessage());
+        meterRegistry.counter("notification_vendor_result_total", "channel", "push", "status", "FAILURE").increment();
         SendPushNResponse failureResponse = new SendPushNResponse();
         failureResponse.setStatus(503);
         failureResponse.setMessage("Vendor gateway unavailable. Circuit active: " + throwable.getMessage());

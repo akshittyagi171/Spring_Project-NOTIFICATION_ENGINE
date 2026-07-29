@@ -14,6 +14,7 @@ import com.notificationengine.NotificationProcessor.models.dtos.content.Whatsapp
 import com.notificationengine.NotificationProcessor.repo.DeliveryLogRepository;
 import com.notificationengine.NotificationProcessor.repo.NotificationRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.MDC;
@@ -35,6 +36,7 @@ public class SendNotificationService {
     private final NotificationRepository notificationRepository;
     private final DeliveryLogRepository deliveryLogRepository;
     private final NotificationHelperService notificationHelperService;
+    private final MeterRegistry meterRegistry;
 
     private final String priorityRoutingKey;
 
@@ -43,12 +45,14 @@ public class SendNotificationService {
                                    DeliveryLogRepository deliveryLogRepository,
                                    ObjectMapper objectMapper,
                                    NotificationHelperService notificationHelperService,
+                                   MeterRegistry meterRegistry,
                                    @Value("${notification.processor.topic}") String priorityRoutingKey) {
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
         this.notificationRepository = notificationRepository;
         this.deliveryLogRepository = deliveryLogRepository;
         this.notificationHelperService = notificationHelperService;
+        this.meterRegistry = meterRegistry;
         this.priorityRoutingKey = priorityRoutingKey;
     }
 
@@ -73,6 +77,7 @@ public class SendNotificationService {
                 log.info("Preference: SMS is allowed acc to preferences. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
                 String notificationString = prepareMessage(smsContent);
                 dispatchToKafkaWithTracing(SMS_TOPIC, priorityRoutingKey, notificationString);
+                meterRegistry.counter("notifications_sent_total", "channel", "sms").increment();
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.sms, Status.pending, "Scheduled to kafka"));
                 log.info("SMS sent to kafka. Delivery Log updated. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
             } catch (Exception e) {
@@ -105,6 +110,7 @@ public class SendNotificationService {
                 log.info("Preference: PushN is allowed acc to preferences. UserId: {}, PushNRequest: {}", user.getId(), pushNRequest);
                 String notificationString = prepareMessage(pushNRequest);
                 dispatchToKafkaWithTracing(PUSH_N_TOPIC, priorityRoutingKey, notificationString);
+                meterRegistry.counter("notifications_sent_total", "channel", "push").increment();
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.push, Status.pending, "Scheduled to kafka"));
                 log.info("Push Notification sent to kafka. Delivery log updated. UserId: {}, PushNRequest: {}", user.getId(), pushNRequest);
             } catch (Exception e) {
@@ -138,6 +144,7 @@ public class SendNotificationService {
                 log.info("Preference: Email is allowed acc to preferences. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
                 String notificationString = prepareMessage(emailContent);
                 dispatchToKafkaWithTracing(EMAIL_TOPIC, priorityRoutingKey, notificationString);
+                meterRegistry.counter("notifications_sent_total", "channel", "email").increment();
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.email, Status.pending, "Scheduled to kafka"));
                 log.info("Email is sent to kafka. Delivery Log updated. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
             } catch (Exception e) {
@@ -170,6 +177,7 @@ public class SendNotificationService {
                 log.info("Preference: WhatsApp is allowed acc to preferences. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
                 String notificationString = prepareMessage(whatsAppContent);
                 dispatchToKafkaWithTracing(WHATSAPP_TOPIC, priorityRoutingKey, notificationString);
+                meterRegistry.counter("notifications_sent_total", "channel", "whatsapp").increment();
                 deliveryLogRepository.save(new DeliveryLog(notification, Channel.whatsapp, Status.pending, "Scheduled to kafka"));
                 log.info("WhatsApp sent to kafka. Delivery Log updated. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
             } catch (Exception e) {

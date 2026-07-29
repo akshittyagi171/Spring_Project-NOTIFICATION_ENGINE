@@ -4,6 +4,7 @@ import com.notificationengine.WhatsAppConsumer.models.SendWhatsAppResponse;
 import com.notificationengine.WhatsAppConsumer.models.WhatsAppContent;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ public class ResilientWhatsAppVendorClient {
 
     private final WhatsAppSender whatsAppSender;
     private static final String RESILIENCE_INSTANCE = "whatsAppVendor";
+    private final MeterRegistry meterRegistry;
 
     @Retry(name = RESILIENCE_INSTANCE)
     @CircuitBreaker(name = RESILIENCE_INSTANCE, fallbackMethod = "fallbackWhatsAppVendorCall")
@@ -24,6 +26,7 @@ public class ResilientWhatsAppVendorClient {
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
             response.setMessage("WhatsApp Delivered Successfully");
+            meterRegistry.counter("notification_vendor_result_total", "channel", "whatsapp", "status", "SUCCESS").increment();
             return response;
         }
 
@@ -32,6 +35,7 @@ public class ResilientWhatsAppVendorClient {
 
     public SendWhatsAppResponse fallbackWhatsAppVendorCall(WhatsAppContent whatsAppContent, Throwable throwable) {
         log.error("Circuit tripped or backend processing failed over. Reason: {}", throwable.getMessage());
+        meterRegistry.counter("notification_vendor_result_total", "channel", "whatsapp", "status", "FAILURE").increment();
         SendWhatsAppResponse failureResponse = new SendWhatsAppResponse();
         failureResponse.setStatus(503);
         failureResponse.setMessage("Vendor gateway unavailable. Circuit active: " + throwable.getMessage());

@@ -3,6 +3,7 @@ package com.notificationengine.EmailConsumer.consumer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notificationengine.EmailConsumer.models.EmailContent;
 import com.notificationengine.EmailConsumer.service.EmailProcessingService;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -32,6 +33,7 @@ public class PriorityAwarePartitionConsumer {
 
     private final EmailProcessingService emailProcessingService;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     private final ConcurrentHashMap<Integer, AtomicLong> activeMessageCounts = new ConcurrentHashMap<>();
 
@@ -98,7 +100,7 @@ public class PriorityAwarePartitionConsumer {
                 : "UNKNOWN-TRACE";
         MDC.put("correlationId", correlationId);
         log.error("CRITICAL AUDIT: Final retry exhausted on consumer pipelines. Processing permanent failure tracking. Reason: {}", exceptionMessage);
-
+        meterRegistry.counter("notification_dlt_total", "topic", record.topic()).increment();
         try {
             EmailContent request = objectMapper.readValue(record.value(), EmailContent.class);
 

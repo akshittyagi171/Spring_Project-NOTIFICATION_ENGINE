@@ -4,6 +4,7 @@ import com.notificationengine.EmailConsumer.models.EmailContent;
 import com.notificationengine.EmailConsumer.models.SendEmailResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ public class ResilientEmailVendorClient {
 
     private final EmailSender emailSender;
     private static final String RESILIENCE_INSTANCE = "EmailVendor";
+    private final MeterRegistry meterRegistry;
 
     @Retry(name = RESILIENCE_INSTANCE)
     @CircuitBreaker(name = RESILIENCE_INSTANCE, fallbackMethod = "fallbackEmailVendorCall")
@@ -24,6 +26,7 @@ public class ResilientEmailVendorClient {
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
             response.setMessage("Email Delivered Successfully");
+            meterRegistry.counter("notification_vendor_result_total", "channel", "email", "status", "SUCCESS").increment();
             return response;
         }
 
@@ -32,6 +35,7 @@ public class ResilientEmailVendorClient {
 
     public SendEmailResponse fallbackEmailVendorCall(EmailContent emailContent, Throwable throwable) {
         log.error("Circuit tripped or backend processing failed over. Reason: {}", throwable.getMessage());
+        meterRegistry.counter("notification_vendor_result_total", "channel", "email", "status", "FAILURE").increment();
         SendEmailResponse failureResponse = new SendEmailResponse();
         failureResponse.setStatus(503);
         failureResponse.setMessage("Vendor gateway unavailable. Circuit active: " + throwable.getMessage());

@@ -4,6 +4,7 @@ import com.notificationengine.SMSConsumer.models.SendSmsResponse;
 import com.notificationengine.SMSConsumer.models.SmsContent;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ public class ResilientSmsVendorClient {
 
     private final SmsSender smsSender;
     private static final String RESILIENCE_INSTANCE = "smsVendor";
+    private final MeterRegistry meterRegistry;
 
     @Retry(name = RESILIENCE_INSTANCE)
     @CircuitBreaker(name = RESILIENCE_INSTANCE, fallbackMethod = "fallbackSmsVendorCall")
@@ -24,6 +26,7 @@ public class ResilientSmsVendorClient {
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
             response.setMessage("SMS Delivered Successfully");
+            meterRegistry.counter("notification_vendor_result_total", "channel", "sms", "status", "SUCCESS").increment();
             return response;
         }
 
@@ -32,6 +35,7 @@ public class ResilientSmsVendorClient {
 
     public SendSmsResponse fallbackSmsVendorCall(SmsContent smsContent, Throwable throwable) {
         log.error("Circuit tripped or backend processing failed over. Reason: {}", throwable.getMessage());
+        meterRegistry.counter("notification_vendor_result_total", "channel", "sms", "status", "FAILURE").increment();
         SendSmsResponse failureResponse = new SendSmsResponse();
         failureResponse.setStatus(503);
         failureResponse.setMessage("Vendor gateway unavailable. Circuit active: " + throwable.getMessage());
