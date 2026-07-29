@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Notification Engine | FCM Tester</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7fa;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 0;
+            color: #1a1a1a;
+        }
+        p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 10px;
+        }
+        button:active {
+            background-color: #0052a3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .token-area {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: none;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .status {
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>FCM Mobile Tester</h2>
+        <p>Tap below to grant permissions and generate a device token for your backend.</p>
+        
+        <button id="btn-request">Grant Permission & Get Token</button>
+        <div id="status-message" class="status"></div>
+
+        <div id="token-area" class="token-area">
+            <textarea id="token-input" readonly></textarea>
+            <button id="btn-copy" style="background-color: #28a745;">Copy Token</button>
+        </div>
+    </div>
+
+    <!-- Firebase JS SDK (Modular Version) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging.js";
+
+        const firebaseConfig = {
+            apiKey: "xxxxxxxxxxxxxxx",
+            authDomain: "xxxxxxxxxxxxxxx",
+            projectId: "xxxxxxxxxxxxxxx",
+            storageBucket: "xxxxxxxxxxxxxxx",
+            messagingSenderId: "xxxxxxxxxxxxxxx",
+            appId: "xxxxxxxxxxxxxxx",
+            measurementId: "xxxxxxxxxxxxxxx"
+        };
+        const VAPID_KEY = "xxxxxxxxxxxxxxx";
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const messaging = getMessaging(app);
+
+        const btnRequest = document.getElementById('btn-request');
+        const btnCopy = document.getElementById('btn-copy');
+        const tokenArea = document.getElementById('token-area');
+        const tokenInput = document.getElementById('token-input');
+        const statusMessage = document.getElementById('status-message');
+
+        btnRequest.addEventListener('click', async () => {
+            btnRequest.disabled = true;
+            btnRequest.innerText = "Requesting...";
+            statusMessage.innerText = "";
+
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    statusMessage.innerText = "Permission granted. Fetching token...";
+                    statusMessage.className = "status success";
+
+                    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+                    
+                    if (token) {
+                        tokenInput.value = token;
+                        tokenArea.style.display = 'block';
+                        btnRequest.style.display = 'none';
+                        statusMessage.innerText = "Token generated successfully!";
+                    } else {
+                        throw new Error("No registration token available.");
+                    }
+                } else {
+                    throw new Error("Notification permission denied.");
+                }
+            } catch (error) {
+                console.error("An error occurred while retrieving token.", error);
+                statusMessage.innerText = error.message || "Failed to get token.";
+                statusMessage.className = "status error";
+                btnRequest.disabled = false;
+                btnRequest.innerText = "Try Again";
+            }
+        });
+
+        btnCopy.addEventListener('click', () => {
+            tokenInput.select();
+            document.execCommand("copy");
+            btnCopy.innerText = "Copied!";
+            setTimeout(() => { btnCopy.innerText = "Copy Token"; }, 2000);
+        });
+
+        // Listen for foreground messages
+        onMessage(messaging, (payload) => {
+            console.log('Message received. ', payload);
+            alert(`Foreground Push Received!\n\nTitle: ${payload.notification.title}\nBody: ${payload.notification.body}`);
+        });
+    </script>
+</body>
+</html>
