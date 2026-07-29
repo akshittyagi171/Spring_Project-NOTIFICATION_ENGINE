@@ -103,6 +103,19 @@ services:
     networks:
       - notification-network
 
+  # --- Kafka Exporter ---
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: kafka-exporter
+    command:
+      - "--kafka.server=broker:29092"
+    ports:
+      - "9308:9308"
+    depends_on:
+      - broker
+    networks:
+      - notification-network
+
 volumes:
   mysql_data:
 
