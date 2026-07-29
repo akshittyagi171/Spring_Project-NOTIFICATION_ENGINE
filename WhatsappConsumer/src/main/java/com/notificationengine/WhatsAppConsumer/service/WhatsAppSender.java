@@ -27,39 +27,61 @@ public class WhatsAppSender {
         try {
             String targetMobile = whatsAppContent.getMobileNumber().trim();
             String toAddress = "whatsapp:" + targetMobile;
+            String fromAddress = "whatsapp:" + twilioConfig.getFromNumber();
 
-            log.info("Preparing production-ready rich WhatsApp notification for ID: {}. Target: {}",
+            log.info("Preparing production-ready sequential WhatsApp notification for ID: {}. Target: {}",
                     whatsAppContent.getNotificationId(), toAddress);
 
-            var messageCreator = Message.creator(
-                    new PhoneNumber(toAddress),
-                    new PhoneNumber("whatsapp:" + twilioConfig.getFromNumber()),
-                    whatsAppContent.getMessage()
-            );
-
+            List<URI> mediaUris = new ArrayList<>();
             if (whatsAppContent.getAttachments() != null && !whatsAppContent.getAttachments().isEmpty()) {
-                List<URI> mediaUris = new ArrayList<>();
                 for (WhatsAppContent.WhatsappAttachment attachment : whatsAppContent.getAttachments()) {
                     if (attachment.getUrl() != null && !attachment.getUrl().isBlank()) {
                         mediaUris.add(URI.create(attachment.getUrl().trim()));
                     }
                 }
+            }
 
-                if (!mediaUris.isEmpty()) {
-                    messageCreator.setMediaUrl(mediaUris);
-                    log.info("Successfully bound {} media URI assets to the WhatsApp payload transaction channel.", mediaUris.size());
+            Message lastMessage = null;
+            StringBuilder sids = new StringBuilder();
+
+            if (mediaUris.isEmpty()) {
+                lastMessage = Message.creator(
+                        new PhoneNumber(toAddress),
+                        new PhoneNumber(fromAddress),
+                        whatsAppContent.getMessage()
+                ).create();
+
+                sids.append(lastMessage.getSid());
+            } else {
+                lastMessage = Message.creator(
+                        new PhoneNumber(toAddress),
+                        new PhoneNumber(fromAddress),
+                        whatsAppContent.getMessage()
+                ).setMediaUrl(List.of(mediaUris.get(0))).create();
+
+                sids.append(lastMessage.getSid());
+                log.info("Dispatched Message 1 (Body + Media 1). SID: {}", lastMessage.getSid());
+
+                for (int i = 1; i < mediaUris.size(); i++) {
+                    Message subsequentMessage = Message.creator(
+                            new PhoneNumber(toAddress),
+                            new PhoneNumber(fromAddress),
+                            ""
+                    ).setMediaUrl(List.of(mediaUris.get(i))).create();
+
+                    sids.append(", ").append(subsequentMessage.getSid());
+                    lastMessage = subsequentMessage;
+                    log.info("Dispatched Message {} (Media only). SID: {}", i + 1, subsequentMessage.getSid());
                 }
             }
 
-            Message message = messageCreator.create();
+            log.info("WhatsApp Dispatch Complete! (Notification Id: {}). Final Status: {}, Twilio Message SIDs: [{}]",
+                    whatsAppContent.getNotificationId(), lastMessage.getStatus(), sids.toString());
 
-            log.info("WhatsApp Dispatch Successful! (Notification Id: {}). Response Status: {}, Twilio Message SID: {}",
-                    whatsAppContent.getNotificationId(), message.getStatus(), message.getSid());
-
-            return new SendWhatsAppResponse(200, "Sid: " + message.getSid() + " Body: " + message.getBody());
+            return new SendWhatsAppResponse(200, "Sids: [" + sids.toString() + "]");
 
         } catch (Exception exception) {
-            log.error("Fatal exception captured inside Twilio media message construction pipeline: {}", exception.toString());
+            log.error("Fatal exception captured inside Twilio sequential media dispatch pipeline: {}", exception.toString());
             return new SendWhatsAppResponse(500, "Exception occurred in WhatsApp Rich Media Engine: " + exception.getMessage());
         }
     }
