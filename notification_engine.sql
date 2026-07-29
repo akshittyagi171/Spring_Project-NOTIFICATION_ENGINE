@@ -25,7 +25,7 @@ CREATE TABLE `notifications` (
   `channel` enum('email','sms','push','whatsapp') NOT NULL,
   `status` enum('pending','sent','failed') NOT NULL DEFAULT 'pending',
   `message` text,
-  `notification_hash` char(128) DEFAULT NOT NULL,
+  `notification_hash` char(128) NOT NULL,
   `request_content` JSON DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
