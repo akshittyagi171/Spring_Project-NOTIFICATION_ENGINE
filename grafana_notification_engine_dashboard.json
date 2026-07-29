@@ -1,0 +1,178 @@
+{
+  "__inputs": [
+    { "name": "DS_PROMETHEUS", "label": "Prometheus", "description": "", "type": "datasource", "pluginId": "prometheus", "pluginName": "Prometheus" }
+  ],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "13.1.1" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" },
+    { "type": "panel", "id": "piechart", "name": "Pie chart", "version": "" },
+    { "type": "panel", "id": "row", "name": "Row", "version": "" }
+  ],
+  "annotations": { "list": [ { "builtIn": 1, "datasource": { "type": "grafana", "uid": "-- Grafana --" }, "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)", "name": "Annotations & Alerts", "type": "dashboard" } ] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    { "id": 100, "type": "row", "title": "System Health & JVM (per service)", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "panels": [] },
+
+    { "id": 1, "type": "timeseries", "title": "CPU Usage % — API vs Processor vs Consumers",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "custom": { "drawStyle": "line", "fillOpacity": 10, "spanNulls": true } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [ { "expr": "process_cpu_usage{application=~\"$application\"} * 100", "legendFormat": "{{application}} - {{instance}}", "refId": "A" } ]
+    },
+
+    { "id": 2, "type": "timeseries", "title": "JVM Heap Memory Used",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "spanNulls": true } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "jvm_memory_used_bytes{area=\"heap\", application=~\"$application\"}", "legendFormat": "{{application}} (used)", "refId": "A" },
+        { "expr": "jvm_memory_max_bytes{area=\"heap\", application=~\"$application\"}", "legendFormat": "{{application}} (max)", "refId": "B" }
+      ]
+    },
+
+    { "id": 3, "type": "timeseries", "title": "Active Threads (high = blocked downstream vendor call)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "spanNulls": true } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [ { "expr": "jvm_threads_live_threads{application=~\"$application\"}", "legendFormat": "{{application}} - {{instance}}", "refId": "A" } ]
+    },
+
+    { "id": 101, "type": "row", "title": "API Throughput & Latency (notificationservice only)", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 }, "panels": [] },
+
+    { "id": 4, "type": "timeseries", "title": "RPS - Notification API",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean"] }, "tooltip": { "mode": "multi" } },
+      "targets": [ { "expr": "sum(rate(http_server_requests_seconds_count{application=\"notificationservice\"}[1m]))", "legendFormat": "RPS", "refId": "A" } ]
+    },
+
+    { "id": 5, "type": "timeseries", "title": "P95 / P99 Latency (target: < 50ms)",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10 },
+        "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 0.05 }, { "color": "red", "value": 0.2 } ] } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"notificationservice\"}[5m])) by (le))", "legendFormat": "p95", "refId": "A" },
+        { "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"notificationservice\"}[5m])) by (le))", "legendFormat": "p99", "refId": "B" }
+      ]
+    },
+
+    { "id": 6, "type": "timeseries", "title": "HTTP Error Rate (4xx / 5xx)",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "stacking": { "mode": "normal" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "sum"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{application=\"notificationservice\", status=~\"4..\"}[1m])) by (status)", "legendFormat": "4xx - {{status}}", "refId": "A" },
+        { "expr": "sum(rate(http_server_requests_seconds_count{application=\"notificationservice\", status=~\"5..\"}[1m])) by (status)", "legendFormat": "5xx - {{status}}", "refId": "B" }
+      ]
+    },
+
+    { "id": 102, "type": "row", "title": "Kafka Health", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 }, "panels": [] },
+
+    { "id": 7, "type": "timeseries", "title": "Consumer Lag by Group / Topic",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 15 },
+        "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1000 } ] } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [ { "expr": "sum(kafka_consumergroup_lag{consumergroup=~\"group-priority-.*|email-consumer|sms-consumer|whatsapp-consumer|push-n-consumer\"}) by (consumergroup, topic)", "legendFormat": "{{consumergroup}} - {{topic}}", "refId": "A" } ]
+    },
+
+    { "id": 8, "type": "timeseries", "title": "Message Processing Rate — Priority 1/2/3 Topics",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ops", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean"] }, "tooltip": { "mode": "multi" } },
+      "targets": [ { "expr": "sum(rate(kafka_consumergroup_current_offset{topic=~\"priority-1|priority-2|priority-3\"}[1m])) by (topic)", "legendFormat": "{{topic}}", "refId": "A" } ]
+    },
+
+    { "id": 103, "type": "row", "title": "Business Metrics", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 }, "panels": [] },
+
+    { "id": 9, "type": "piechart", "title": "Notifications Sent by Channel (24h)",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 36 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }, "pieType": "donut", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [ { "expr": "sum by (channel) (increase(notifications_sent_total[24h]))", "legendFormat": "{{channel}}", "refId": "A" } ]
+    },
+
+    { "id": 10, "type": "timeseries", "title": "Vendor Success vs Failure Rate (by channel)",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 36 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ops", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "FAILURE" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } } ] },
+          { "matcher": { "id": "byRegexp", "options": "SUCCESS" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } } ] }
+        ] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "sum"] }, "tooltip": { "mode": "multi" } },
+      "targets": [ { "expr": "sum by (channel, status) (rate(notification_vendor_result_total[5m]))", "legendFormat": "{{channel}} - {{status}}", "refId": "A" } ]
+    },
+
+    { "id": 104, "type": "row", "title": "Database & Connection Pool", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 44 }, "panels": [] },
+
+    { "id": 11, "type": "timeseries", "title": "HikariCP Active / Idle Connections",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 45 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "hikaricp_connections_active{application=~\"$application\"}", "legendFormat": "{{application}} active", "refId": "A" },
+        { "expr": "hikaricp_connections_idle{application=~\"$application\"}", "legendFormat": "{{application}} idle", "refId": "B" },
+        { "expr": "hikaricp_connections_max{application=~\"$application\"}", "legendFormat": "{{application}} max", "refId": "C" }
+      ]
+    },
+
+    { "id": 105, "type": "row", "title": "Dead Letter Topic", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 }, "panels": [] },
+
+    { "id": 12, "type": "stat", "title": "Messages Sent to DLT (24h)",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 54 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "textMode": "auto", "colorMode": "background", "graphMode": "none" },
+      "targets": [ { "expr": "sum(increase(notification_dlt_total[24h]))", "legendFormat": "DLT count", "refId": "A" } ]
+    },
+
+    { "id": 13, "type": "timeseries", "title": "DLT Messages Over Time — email-topic-dlt / sms-topic-dlt / whatsapp-topic-dlt / push-n-topic-dlt",
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 54 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "bars", "fillOpacity": 30 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } },
+      "targets": [ { "expr": "sum by (topic) (increase(notification_dlt_total[5m]))", "legendFormat": "{{topic}}", "refId": "A" } ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["notification-engine", "spring-boot", "kafka"],
+  "templating": {
+    "list": [
+      { "name": "DS_PROMETHEUS", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0, "label": "Prometheus" },
+      {
+        "name": "application", "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": { "query": "label_values(jvm_threads_live_threads, application)", "refId": "StandardVariableQuery" },
+        "refresh": 2, "multi": true, "includeAll": true,
+        "current": { "text": "All", "value": "$__all" }, "label": "Service"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Notification Engine - Health & Business Overview",
+  "uid": "notif-engine-overview",
+  "version": 1,
+  "weekStart": ""
+}
