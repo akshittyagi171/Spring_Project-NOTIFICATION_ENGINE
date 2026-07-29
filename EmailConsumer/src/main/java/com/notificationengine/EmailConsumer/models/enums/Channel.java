@@ -1,5 +1,5 @@
 package com.notificationengine.EmailConsumer.models.enums;
 
 public enum Channel {
-    email, sms, push
+    email, sms, push, whatsapp
 }

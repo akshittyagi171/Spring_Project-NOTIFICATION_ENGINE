@@ -22,7 +22,7 @@ DROP TABLE IF EXISTS `notifications`;
 CREATE TABLE `notifications` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
-  `channel` enum('email','sms','push') NOT NULL,
+  `channel` enum('email','sms','push','whatsapp') NOT NULL,
   `status` enum('pending','sent','failed') NOT NULL DEFAULT 'pending',
   `message` text,
   `notification_hash` char(128) DEFAULT NOT NULL,
@@ -41,7 +41,7 @@ DROP TABLE IF EXISTS `preferences`;
 CREATE TABLE `preferences` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
-  `channel` enum('email','sms','push') NOT NULL,
+  `channel` enum('email','sms','push','whatsapp') NOT NULL,
   `is_enabled` tinyint(1) NOT NULL DEFAULT '1',
   `quiet_hours` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -80,29 +80,13 @@ DROP TABLE IF EXISTS `delivery_logs`;
 CREATE TABLE delivery_logs (
     `log_id` bigint AUTO_INCREMENT,
     `notification_id` bigint NOT NULL,
-    `channel` enum('email', 'sms', 'push') NOT NULL,
+    `channel` enum('email', 'sms', 'push','whatsapp') NOT NULL,
     `status` varchar(20) NOT NULL,
     `error_message` text,
     `attempted_at` timestamp DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`log_id`),
     FOREIGN KEY (`notification_id`) REFERENCES notifications(`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-INSERT INTO `preferences` (`id`, `user_id`, `channel`, `is_enabled`, `quiet_hours`, `created_at`, `updated_at`, `allowed_messages_priority`) VALUES
-(13, 1, 'email', 1, '{\"end\": \"06:00\", \"start\": \"22:00\", \"quietHoursEnabled\": true}', '2026-07-16 08:58:00', '2026-07-16 08:58:00', '[1, 2]'),
-(14, 1, 'sms', 0, '{\"end\": \"09:00\", \"start\": \"18:00\", \"quietHoursEnabled\": true}', '2026-07-16 08:58:00', '2026-07-16 08:58:00', '[1, 2]'),
-(15, 1, 'push', 1, '{\"end\": \"00:00\", \"start\": \"00:00\", \"quietHoursEnabled\": false}', '2026-07-16 08:58:00', '2026-07-16 08:58:00', '[3]');
-
-INSERT INTO `templates` (`id`, `name`, `content`, `placeholders`, `created_at`, `updated_at`, `template_priority`) VALUES
-(1, 'OTP Verification', 'Your OTP is {otp}. Please use this to complete your verification. Do not share this code with anyone.', '[\"otp\"]', '2026-07-16 08:55:34', '2026-07-16 08:55:34', '1'),
-(2, 'Welcome Greeting', 'Hello {name}, welcome to Trigear! We are excited to have you onboard.', '[\"name\"]', '2026-07-16 08:55:47', '2026-07-16 08:55:47', '2'),
-(3, 'Password Reset', 'Hi {name}, you requested to reset your password. Use the link below to set a new password: {reset_link}', '[\"name\", \"reset_link\"]', '2026-07-16 08:55:54', '2026-07-16 08:55:54', '1'),
-(4, 'Account Deactivation Warning', 'Dear {name}, your account is scheduled for deactivation on {deactivation_date}. Please contact support if this is a mistake.', '[\"name\", \"deactivation_date\"]', '2026-07-16 08:56:02', '2026-07-16 08:56:02', '1'),
-(5, 'Birthday Wish', 'Happy Birthday, {name}! 🎉 Wishing you a fantastic day filled with joy and laughter. Here’s a special treat: {birthday_offer}.', '[\"name\", \"birthday_offer\"]', '2026-07-16 08:56:12', '2026-07-16 08:56:12', '2'),
-(6, 'Trending Nearby', 'Hi {name}, check out what’s trending in {location}! Don’t miss out on amazing deals and events near you.', '[\"name\", \"location\"]', '2026-07-16 08:56:27', '2026-07-16 08:56:27', '3');
-
-INSERT INTO `users` (`id`, `name`, `email`, `phone`, `created_at`, `updated_at`) VALUES
-(1, 'Akshit', 'tyagiakshit171.learning@gmail.com', '7906767568', '2026-07-16 08:55:01', '2026-07-16 08:55:01');
 
 
 
