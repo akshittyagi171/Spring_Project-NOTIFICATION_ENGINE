@@ -14,7 +14,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"notificationPriority\": 1,\n  \"channels\": [\"sms\",\"push\",\"email\",\"whatsapp\"],\n  \"recipient\": {\n    \"userId\": \"1\"\n  },\n  \"content\": {\n    \"usingTemplates\": true,\n    \"templateName\": \"Trending Nearby\",\n    \"placeholders\": {\n      \"name\": \"Akshit\",\n      \"location\": \"Noida\"\n    },\n    \"message\": \"\",\n    \"emailSubject\": \"New Headphones Offer | Hey Check this new Headphone Out\",\n    \"emailAttachments\": [\n      \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n    ],\n    \"pushNotification\": {\n      \"title\": \"New Headphones Offer | Hey Check this new Headphone Out\",\n      \"action\": {\n        \"url\": \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n      }\n    }\n  }\n}",
+          "raw": "{\n    \"notificationPriority\": 1,\n    \"channels\": [\n        \"sms\",\n        \"email\",\n        \"whatsapp\",\n        \"push\"\n    ],\n    \"recipients\": [\n        {\n            \"userId\": \"2\"\n        },\n        {\n            \"name\": \"Akshit Tyagi\",\n            \"email\": \"tyagiakshit171.jobs@gmail.com\",\n            \"phone\": \"+91xxxxxxx\",\n            \"fcmToken\": \"xxxxxxx\"\n        }\n    ],\n    \"content\": {\n        \"email\": {\n            \"templateName\": \"order_placed_email\",\n            \"placeholders\": {\n                \"name\": \"Akshit\",\n                \"orderId\": \"SNKX-102938\",\n                \"productName\": \"Nike Air Jordan 1 Retro High\",\n                \"expectedDelivery\": \"Thursday, Oct 12\",\n                \"trackingLink\": \"https://track.sneakerx.com/SNKX-102938\"\n            },\n            \"subject\": \"Order Confirmed: Your SneakerX Order #SNKX-102938\",\n            \"attachments\": [\n                {\n                    \"type\": \"application/pdf\",\n                    \"url\": \"https://slicedinvoices.com/pdf/wordpress-pdf-invoice-plugin-sample.pdf\",\n                    \"filename\": \"SneakerX_Invoice_SNKX-102938.pdf\"\n                }\n            ]\n        },\n        \"whatsapp\": {\n            \"templateName\": \"order_placed_whatsapp\",\n            \"placeholders\": {\n                \"name\": \"Akshit\",\n                \"orderId\": \"SNKX-102938\",\n                \"productName\": \"Nike Air Jordan 1 Retro High\",\n                \"expectedDelivery\": \"Thursday, Oct 12\",\n                \"trackingLink\": \"https://track.sneakerx.com/SNKX-102938\"\n            },\n            \"attachments\": [\n                {\n                    \"type\": \"image/jpeg\",\n                    \"url\": \"https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80\",\n                    \"filename\": \"jordan_1_retro.jpg\"\n                },\n                {\n                    \"type\": \"application/pdf\",\n                    \"url\": \"https://slicedinvoices.com/pdf/wordpress-pdf-invoice-plugin-sample.pdf\",\n                    \"filename\": \"SneakerX_Invoice_SNKX-102938.pdf\"\n                }\n            ]\n        },\n        \"push\": {\n            \"templateName\": \"order_placed_push\",\n            \"placeholders\": {\n                \"name\": \"Akshit\",\n                \"orderId\": \"SNKX-102938\",\n                \"productName\": \"Nike Air Jordan 1 Retro\",\n                \"expectedDelivery\": \"Oct 12\"\n            },\n            \"title\": \"Order Confirmed! 👟\",\n            \"action\": {\n                \"type\": \"deep_link\",\n                \"url\": \"sneakerx://orders/SNKX-102938\"\n            },\n            \"mediaUrl\": \"https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80\"\n        },\n        \"sms\": {\n            \"templateName\": \"order_placed_sms\",\n            \"placeholders\": {\n                \"name\": \"Akshit\",\n                \"orderId\": \"SNKX-102938\",\n                \"productName\": \"Nike Air Jordan 1\",\n                \"expectedDelivery\": \"12-Oct\",\n                \"trackingLink\": \"https://bit.ly/snkx-trk-938\"\n            }\n        }\n    }\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -41,7 +41,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"notificationPriority\": 1,\n  \"channels\": [\"sms\",\"push\",\"email\",\"whatsapp\"],\n  \"recipient\": {\n    \"userId\": \"1\"\n  },\n  \"content\": {\n    \"usingTemplates\": true,\n    \"templateName\": \"Trending Nearby\",\n    \"placeholders\": {\n      \"name\": \"Akshit\",\n      \"location\": \"Noida\"\n    },\n    \"message\": \"\",\n    \"emailSubject\": \"New Headphones Offer | Hey Check this new Headphone Out\",\n    \"emailAttachments\": [\n      \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n    ],\n    \"pushNotification\": {\n      \"title\": \"New Headphones Offer | Hey Check this new Headphone Out\",\n      \"action\": {\n        \"url\": \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n      }\n    }\n  }\n}",
+              "raw": "{\n    \"notificationPriority\": 1,\n    \"channels\": [\n        \"sms\",\n        \"email\",\n        \"whatsapp\"\n    ],\n    \"recipients\": [\n        {\n            \"userId\": \"2\"\n        }\n    ],\n    \"content\": {\n        \"email\": {\n            \"templateName\": \"order_shipped_email\",\n            \"placeholders\": {\n                \"name\": \"Akshit\",\n                \"orderId\": \"ORD-98765\",\n                \"trackingLink\": \"https://track.myapp.com/ORD-98765\"\n            },\n            \"subject\": \"Great news! Your order has shipped 📦\",\n            \"attachments\": [\n                {\n                    \"type\": \"image/jpeg\",\n                    \"url\": \"https://img.magnific.com/free-vector/minimal-yellow-invoice-template-vector-design_1017-12070.jpg\",\n                    \"filename\": \"invoice.jpg\"\n                }\n            ]\n        },\n        \"whatsapp\": {\n            \"templateName\": \"order_shipped_whatsapp\",\n            \"placeholders\": {\n                \"name\": \"Akshit\",\n                \"orderId\": \"ORD-98765\",\n                \"trackingLink\": \"https://track.myapp.com/ORD-98765\"\n            },\n            \"attachments\": [\n                {\n                    \"type\": \"image/jpeg\",\n                    \"url\": \"https://www.shutterstock.com/shutterstock/photos/1776897995/display_1500/stock-vector-order-update-icon-your-order-has-shipped-label-badge-isolated-vector-illustration-background-1776897995.jpg\"\n                }\n            ]\n        },\n        \"push\": {\n            \"templateName\": \"order_shipped_push\",\n            \"placeholders\": {\n                \"name\": \"Akshit\",\n                \"orderId\": \"ORD-98765\"\n            },\n            \"title\": \"Order Shipped! 🚚\",\n            \"action\": {\n                \"type\": \"deep_link\",\n                \"url\": \"myapp://orders/ORD-98765\"\n            },\n            \"mediaUrl\": \"https://www.shutterstock.com/shutterstock/photos/1776897995/display_1500/stock-vector-order-update-icon-your-order-has-shipped-label-badge-isolated-vector-illustration-background-1776897995.jpg\"\n        },\n        \"sms\": {\n            \"templateName\": \"order_shipped_sms\",\n            \"placeholders\": {\n                \"name\": \"Akshit\",\n                \"orderId\": \"ORD-98765\",\n                \"trackingLink\": \"https://bit.ly/trk-98765\"\n            }\n        }\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -74,7 +74,7 @@
             },
             {
               "key": "Date",
-              "value": "Sun, 19 Jul 2026 08:53:15 GMT"
+              "value": "Wed, 29 Jul 2026 07:32:29 GMT"
             },
             {
               "key": "Keep-Alive",
@@ -86,7 +86,7 @@
             }
           ],
           "cookie": [],
-          "body": "{\n    \"success\": true,\n    \"statusCode\": 202,\n    \"message\": \"Notification accepted for processing.\",\n    \"timestamp\": \"2026-07-19T14:23:15.629217\",\n    \"data\": {\n        \"notificationSendRequest\": {\n            \"notificationPriority\": 1,\n            \"channels\": [\n                \"push\"\n            ],\n            \"recipient\": {\n                \"userId\": \"1\",\n                \"userEmail\": null\n            },\n            \"content\": {\n                \"usingTemplates\": true,\n                \"templateName\": \"Trending Nearby\",\n                \"placeholders\": {\n                    \"name\": \"Akshit\",\n                    \"location\": \"Noida\"\n                },\n                \"message\": \"\",\n                \"emailSubject\": \"Flipkart Offer | Hey Check this Out\",\n                \"emailAttachments\": [\n                    \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n                ],\n                \"pushNotification\": {\n                    \"title\": \"Flipkart Offer | Hey Check this Out\",\n                    \"action\": {\n                        \"url\": \"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800\"\n                    }\n                }\n            }\n        },\n        \"status\": \"QUEUED_IN_KAFKA\"\n    }\n}"
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 202,\n    \"message\": \"Notification accepted for processing.\",\n    \"timestamp\": \"2026-07-29T13:02:29.685791\",\n    \"data\": {\n        \"status\": \"QUEUED_IN_KAFKA\",\n        \"message\": \"Notification request processed and enqueued successfully.\",\n        \"processedRecipients\": [\n            {\n                \"userId\": \"2\",\n                \"name\": null,\n                \"email\": null,\n                \"phone\": null,\n                \"newUser\": false\n            }\n        ],\n        \"contentSent\": {\n            \"email\": {\n                \"templateName\": \"order_shipped_email\",\n                \"placeholders\": {\n                    \"name\": \"Akshit\",\n                    \"orderId\": \"ORD-98765\",\n                    \"trackingLink\": \"https://track.myapp.com/ORD-98765\"\n                },\n                \"message\": null,\n                \"subject\": \"Great news! Your order has shipped 📦\",\n                \"attachments\": [\n                    {\n                        \"type\": \"image/jpeg\",\n                        \"url\": \"https://img.magnific.com/free-vector/minimal-yellow-invoice-template-vector-design_1017-12070.jpg\",\n                        \"filename\": \"invoice.jpg\"\n                    }\n                ]\n            },\n            \"whatsapp\": {\n                \"templateName\": \"order_shipped_whatsapp\",\n                \"placeholders\": {\n                    \"name\": \"Akshit\",\n                    \"orderId\": \"ORD-98765\",\n                    \"trackingLink\": \"https://track.myapp.com/ORD-98765\"\n                },\n                \"message\": null,\n                \"attachments\": [\n                    {\n                        \"type\": \"image/jpeg\",\n                        \"url\": \"https://www.shutterstock.com/shutterstock/photos/1776897995/display_1500/stock-vector-order-update-icon-your-order-has-shipped-label-badge-isolated-vector-illustration-background-1776897995.jpg\",\n                        \"caption\": null\n                    }\n                ]\n            },\n            \"push\": {\n                \"templateName\": \"order_shipped_push\",\n                \"placeholders\": {\n                    \"name\": \"Akshit\",\n                    \"orderId\": \"ORD-98765\"\n                },\n                \"message\": null,\n                \"title\": \"Order Shipped! 🚚\",\n                \"action\": {\n                    \"type\": \"deep_link\",\n                    \"url\": \"myapp://orders/ORD-98765\"\n                },\n                \"mediaUrl\": \"https://www.shutterstock.com/shutterstock/photos/1776897995/display_1500/stock-vector-order-update-icon-your-order-has-shipped-label-badge-isolated-vector-illustration-background-1776897995.jpg\"\n            },\n            \"sms\": {\n                \"templateName\": \"order_shipped_sms\",\n                \"placeholders\": {\n                    \"name\": \"Akshit\",\n                    \"orderId\": \"ORD-98765\",\n                    \"trackingLink\": \"https://bit.ly/trk-98765\"\n                },\n                \"message\": null\n            }\n        }\n    }\n}"
         }
       ]
     },
@@ -97,7 +97,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"name\": \"Akshit\",\n    \"email\": \"tyagiakshit171@gmail.com\",\n    \"phone\": \"+917906767568\",\n    \"fcmToken\": \"fSQiHd451c7apfutKqEc-C:APA91bE781yGvq-c4hfURYNp-9bEkZjyIah0BIG9my35SF-JbRg5b3r7HKZ5JpmNJWNQqhRq1GVDQrl2KHc2AVkeDCwMRTnbS-QK1AfdyCCpNB5Z4PqdhLw\"\n}",
+          "raw": "{\n    \"name\": \"Akshit\",\n    \"email\": \"tyagiakshit171.jobs@gmail.com\",\n    \"phone\": \"+917906767568\",\n    \"fcmToken\": \"xxxxx\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -134,13 +134,15 @@
               }
             },
             "url": {
-              "raw": "localhost:8080/api/sync",
+              "raw": "localhost:8080/api/v1/users/sync",
               "host": [
                 "localhost"
               ],
               "port": "8080",
               "path": [
                 "api",
+                "v1",
+                "users",
                 "sync"
               ]
             }
@@ -159,7 +161,7 @@
             },
             {
               "key": "Date",
-              "value": "Sun, 19 Jul 2026 04:57:21 GMT"
+              "value": "Wed, 29 Jul 2026 17:21:47 GMT"
             },
             {
               "key": "Keep-Alive",
@@ -171,63 +173,7 @@
             }
           ],
           "cookie": [],
-          "body": "{\n    \"success\": true,\n    \"statusCode\": 201,\n    \"message\": \"User profile registered successfully\",\n    \"timestamp\": \"2026-07-19T10:27:21.258304\",\n    \"data\": {\n        \"id\": 3,\n        \"email\": \"tyagiakshit171@gmail.com\",\n        \"status\": \"CREATED\"\n    }\n}"
-        },
-        {
-          "name": "Success - Already exists",
-          "originalRequest": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"Akshit\",\n    \"email\": \"tyagiakshit171@gmail.com\",\n    \"phone\": \"+917906767568\",\n    \"fcmToken\": \"fSQiHd451c7apfutKqEc-C:APA91bE781yGvq-c4hfURYNp-9bEkZjyIah0BIG9my35SF-JbRg5b3r7HKZ5JpmNJWNQqhRq1GVDQrl2KHc2AVkeDCwMRTnbS-QK1AfdyCCpNB5Z4PqdhLw\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "localhost:8080/api/v1/users/sync",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "api",
-                "v1",
-                "users",
-                "sync"
-              ]
-            }
-          },
-          "status": "OK",
-          "code": 200,
-          "_postman_previewlanguage": null,
-          "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            },
-            {
-              "key": "Transfer-Encoding",
-              "value": "chunked"
-            },
-            {
-              "key": "Date",
-              "value": "Sun, 19 Jul 2026 11:16:11 GMT"
-            },
-            {
-              "key": "Keep-Alive",
-              "value": "timeout=60"
-            },
-            {
-              "key": "Connection",
-              "value": "keep-alive"
-            }
-          ],
-          "cookie": [],
-          "body": "{\n    \"success\": true,\n    \"statusCode\": 200,\n    \"message\": \"User profile matched and synced\",\n    \"timestamp\": \"2026-07-19T16:46:11.254307\",\n    \"data\": {\n        \"id\": 3,\n        \"email\": \"tyagiakshit171@gmail.com\",\n        \"status\": \"ALREADY_EXISTS\"\n    }\n}"
+          "body": "{\n    \"success\": true,\n    \"statusCode\": 201,\n    \"message\": \"User profile registered successfully\",\n    \"timestamp\": \"2026-07-29T22:51:47.978207\",\n    \"data\": {\n        \"id\": 4,\n        \"email\": \"tyagiakshit171.jobs@gmail.com\",\n        \"status\": \"CREATED\"\n    }\n}"
         }
       ]
     },
