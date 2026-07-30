@@ -1,6 +1,6 @@
 # Notification Engine
 
-A multi-channel notification delivery system built with **Spring Boot** and **Apache Kafka**, capable of sending notifications over **Email, SMS, WhatsApp, and Push** — with priority-based routing, per-user preferences (including quiet hours), template-driven messaging, idempotency guarantees, and automatic retries with dead-letter handling.
+A multi-channel notification delivery system built with **Spring Boot** and **Apache Kafka**, capable of sending notifications over **Email, SMS, WhatsApp, and Push** — with priority-based routing, per-user preferences (including quiet hours), template-driven messaging, idempotency guarantees, automatic retries with dead-letter handling, and full observability (metrics, logs, and distributed tracing).
 
 This isn't a single monolith — it's six independently deployable Spring Boot services that together form an event-driven pipeline, closely mirroring how notification platforms are built in production (think: what powers OTPs, transactional alerts, and marketing pings at scale).
 
@@ -13,6 +13,7 @@ This isn't a single monolith — it's six independently deployable Spring Boot s
 - [How a Notification Actually Travels](#how-a-notification-actually-travels)
 - [Kafka Topic Design](#kafka-topic-design)
 - [Reliability & Fault Tolerance](#reliability--fault-tolerance)
+- [Observability](#observability)
 - [Database Design (ERD)](#database-design-erd)
 - [API Surface](#api-surface)
 - [Running Locally](#running-locally)
@@ -37,11 +38,12 @@ This project solves that by treating notification delivery as an **asynchronous,
 | Persistence | MySQL 8 (via Spring Data JPA / Hibernate) |
 | Caching | Redis (template-priority lookup + user cache) |
 | Resilience | Resilience4j (Circuit Breaker + Retry), Spring Kafka `@RetryableTopic` + DLT |
+| Observability | Spring Boot Actuator + Micrometer (`/actuator/prometheus`), Prometheus (metrics scraping), Grafana (dashboards), Loki (centralized log aggregation via `loki-logback-appender`), Kafka Exporter (broker/topic metrics), correlation-ID based distributed tracing propagated through Kafka headers |
 | Email Provider | SendGrid |
-| SMS / WhatsApp Provider | Twilio |
+| SMS / WhatsApp Provider | Twilio (WhatsApp Business API — one media attachment per message, per Twilio/WhatsApp limits) |
 | Push Provider | Firebase Cloud Messaging (`firebase-admin`) |
-| Containerization | Docker Compose (MySQL, Redis, Kafka broker, Control Center) |
-| API Testing | Postman collection included in repo |
+| Containerization | Docker Compose (MySQL, Redis, Kafka broker, Control Center, Prometheus, Grafana, Loki, Kafka Exporter) |
+| API Testing | Postman collection included in repo (v2.0) |
 
 ---
 
@@ -49,9 +51,11 @@ This project solves that by treating notification delivery as an **asynchronous,
 
 The system is composed of **6 services**, each with a single, well-defined responsibility:
 
-1. **`notificationservice`** — the public-facing API gateway. Accepts send requests, validates them, assigns a priority, and hands off to Kafka. Also owns Users, Templates, and Preferences CRUD.
+1. **`notificationservice`** — the public-facing API gateway. Accepts send requests, validates them, assigns a priority, and hands off to Kafka. Also owns Users, Templates, and Preferences CRUD. A `CorrelationIdFilter` stamps every inbound request with a correlation ID (via MDC) so its lifecycle can be traced end-to-end across every downstream service.
 2. **`NotificationProcessor`** — the brain. Consumes priority-tagged requests, resolves templates, checks user preferences/quiet-hours, de-duplicates, persists to the DB, and fans the request out to per-channel Kafka topics. This service is **deployed multiple times** — once per priority level (`NOTIFICATION_PRIORITY=1|2|3`) — so a flood of low-priority marketing messages can never starve high-priority OTPs of processing capacity.
 3. **`EmailConsumer`**, **`SMSConsumer`**, **`WhatsappConsumer`**, **`PushNConsumer`** — four independent microservices, one per channel, each consuming from its own Kafka topic and calling the relevant third-party vendor API (SendGrid / Twilio / Twilio WhatsApp / FCM), wrapped in a circuit breaker + retry policy, with dead-letter handling on exhausted retries.
+
+The correlation ID generated at the gateway is propagated as a Kafka message header through every hop of the pipeline, so a single notification's journey — from the initial API call, through priority routing, channel fan-out, and final vendor delivery — can be reconstructed from logs across all six services.
 
 ### Basic Overview Diagram
 <img width="665" height="556" alt="Image" src="https://github.com/user-attachments/assets/2cf0ce80-12d9-4bd0-8cab-ace6d4313ce1" />
@@ -70,13 +74,13 @@ The system is composed of **6 services**, each with a single, well-defined respo
 
 1. A client calls `POST /api/send-notification` on `notificationservice` with a recipient, one or more channels, and either a raw message or a template name + placeholders.
 2. The gateway validates the payload, and if no explicit priority was given, looks up the **template's priority** (checking Redis first, falling back to MySQL and populating the cache) — so, for example, an OTP template can be pre-configured as priority `1` (urgent) while a "trending nearby" promo is priority `3` (low).
-3. The full request is serialized and pushed onto `priority-1`, `priority-2`, or `priority-3` on Kafka. The API returns `202 Accepted` immediately — the caller doesn't wait for actual delivery.
+3. The full request is serialized and pushed onto `priority-1`, `priority-2`, or `priority-3` on Kafka, carrying the request's correlation ID as a header. The API returns `202 Accepted` immediately — the caller doesn't wait for actual delivery.
 4. A `NotificationProcessor` instance dedicated to that priority level picks it up. It:
-    - Resolves the template into a final message (if templated),
-    - Looks up the user's **preferences** — is this channel enabled for them? Are we inside their configured **quiet hours**? Is this message's priority in their `allowed_messages_priority` list?
-    - Computes a **content hash** and attempts to persist a `notifications` row — the `(user_id, channel, notification_hash)` unique constraint in MySQL is what actually enforces idempotency; a retried/duplicate request fails to insert and is safely dropped.
-    - Publishes the resolved, per-channel payload onto `email-topic`, `sms-topic`, `whatsapp-topic`, or `push-n-topic`, and writes a `delivery_logs` row marking it `pending`.
-5. The relevant channel consumer (e.g. `EmailConsumer`) picks the message off its topic, calls the vendor SDK through a Resilience4j-wrapped client, and updates the notification's status in MySQL based on the outcome. If the vendor call keeps failing, Spring Kafka's retry topic mechanism retries with backoff before routing the message to a **dead-letter topic**, where the notification is finally marked `failed`.
+   - Resolves the template into a final message (if templated),
+   - Looks up the user's **preferences** — is this channel enabled for them? Are we inside their configured **quiet hours**? Is this message's priority in their `allowed_messages_priority` list?
+   - Computes a **content hash** and attempts to persist a `notifications` row — the `(user_id, channel, notification_hash)` unique constraint in MySQL is what actually enforces idempotency; a retried/duplicate request fails to insert and is safely dropped.
+   - Publishes the resolved, per-channel payload onto `email-topic`, `sms-topic`, `whatsapp-topic`, or `push-n-topic` (headers, including the correlation ID, carried along), and writes a `delivery_logs` row marking it `pending`.
+5. The relevant channel consumer (e.g. `EmailConsumer`) picks the message off its topic, calls the vendor SDK through a Resilience4j-wrapped client, and updates the notification's status in MySQL based on the outcome. For WhatsApp specifically, any media attachment on the request is capped to a single item per message, since the WhatsApp Business API only allows one attachment per outbound message. If the vendor call keeps failing, Spring Kafka's retry topic mechanism retries with backoff before routing the message to a **dead-letter topic**, where the notification is finally marked `failed`.
 
 ---
 
@@ -88,7 +92,7 @@ The system is composed of **6 services**, each with a single, well-defined respo
 | `email-topic`, `sms-topic`, `whatsapp-topic`, `push-n-topic` | `NotificationProcessor` | corresponding `*Consumer` service | Fan-out by delivery channel; each channel scales and fails independently |
 | `<topic>-retry-N` / DLT | Spring Kafka retry mechanism | Same consumer, then a dead-letter handler | Automatic backoff retries (4 attempts, exponential backoff) before permanently marking a notification `failed` |
 
-A **custom Kafka partitioner** in `NotificationProcessor` also maps priority → partition index on the channel topics, so even within, say, `email-topic`, priority-1 traffic is isolated from priority-3 traffic at the partition level — and the consumer side adds a light throttling check so a flood of low-priority messages yields to any in-flight high-priority ones.
+A **custom Kafka partitioner** in `NotificationProcessor` also maps priority → partition index on the channel topics, so even within, say, `email-topic`, priority-1 traffic is isolated from priority-3 traffic at the partition level — and the consumer side adds a light throttling check so a flood of low-priority messages yields to any in-flight high-priority ones. Every message on every topic carries the originating correlation ID as a Kafka header, which each consumer restores into its own MDC context for traceable logging.
 
 ---
 
@@ -98,6 +102,24 @@ A **custom Kafka partitioner** in `NotificationProcessor` also maps priority →
 - **Retryable topics + Dead Letter Topic (DLT)** at the Kafka consumer layer — transient failures (a vendor blip) get retried automatically with exponential backoff; permanent failures get parked in a DLT and the notification is marked `failed` with the error message logged.
 - **Idempotency by design** — the `notifications.notification_hash` unique constraint means the same logical request, even if re-published to Kafka, is only ever delivered once.
 - **Preference & quiet-hours enforcement** happens *before* a message ever reaches a channel topic, so opted-out users or messages sent during a user's configured quiet window never even reach the vendor.
+- **End-to-end correlation IDs** mean that when something does fail, the exact failing request can be traced through every service's logs (and in Grafana/Loki) instead of being pieced together from timestamps.
+
+---
+
+## Observability
+
+Every service exposes Actuator health and Prometheus-formatted metrics (`/actuator/prometheus`) via Micrometer, and ships structured logs to Loki through `loki-logback-appender` — all tagged with `spring.application.name` and the request's correlation ID.
+
+- **Prometheus** scrapes each of the six services (gateway, per-priority processors, and the four channel consumers) plus a dedicated **Kafka Exporter** for broker/topic-level metrics (consumer lag, partition throughput, etc.).
+- **Grafana** visualizes it all on a pre-built dashboard (`grafana_notification_engine_dashboard.json`) covering request rates, delivery success/failure by channel, circuit breaker state, and Kafka consumer lag.
+- **Loki** centralizes logs from all six services so a single correlation ID can be searched to pull the full trace of one notification's journey, end to end.
+
+This turns "did the OTP actually go out, and if not, where did it die?" from a multi-service log-grepping exercise into a single dashboard query.
+
+### Some Grafana Dashboard Images
+<img width="1462" height="773" alt="Image" src="https://github.com/user-attachments/assets/45f6de28-bced-46b0-bc23-7670b438a6cf" />
+<img width="1469" height="691" alt="Image" src="https://github.com/user-attachments/assets/7c7cfcc9-d8e2-4158-a271-96b546dd5daa" />
+<img width="1469" height="780" alt="Image" src="https://github.com/user-attachments/assets/3130afae-156a-4223-bb1a-a68b8effd05d" />
 
 ---
 
@@ -191,12 +213,14 @@ Exposed by `notificationservice` (full request/response shapes are in the includ
 | `PUT` | `/api/v1/templates/{id}` | Update a template |
 | `DELETE` | `/api/v1/templates/{id}` | Delete a template |
 
+Each service also exposes `/actuator/health` and `/actuator/prometheus` for liveness and metrics scraping.
+
 ---
 
 ## Running Locally
 
 ```bash
-# 1. Spin up infra: MySQL, Redis, Kafka (KRaft), Control Center
+# 1. Spin up infra: MySQL, Redis, Kafka (KRaft), Control Center, Prometheus, Grafana, Loki, Kafka Exporter
 docker-compose up -d
 
 # 2. Load the schema + seed data
@@ -213,7 +237,16 @@ cd PushNConsumer && ./mvnw spring-boot:run
 
 Each service reads its DB, Redis, Kafka, and vendor credentials from environment variables (see each module's `application.properties`) — sensible `localhost` defaults are provided for local development, so you only need to supply the third-party API keys (SendGrid, Twilio, Firebase) to actually deliver messages.
 
-Kafka topics can be visually inspected via **Confluent Control Center** at `http://localhost:9021`.
+Local endpoints once everything is up:
+
+| Tool | URL | Purpose |
+|---|---|---|
+| Confluent Control Center | `http://localhost:9021` | Inspect Kafka topics, partitions, and consumer groups visually |
+| Prometheus | `http://localhost:9090` | Query raw metrics scraped from all six services + Kafka Exporter |
+| Grafana | `http://localhost:3000` | Pre-built dashboard (import `grafana_notification_engine_dashboard.json`); default login `admin` / `admin` |
+| Loki (via Grafana) | `http://localhost:3100` | Search centralized logs by correlation ID across all services |
+
+`fcmNotificationTester/` is a small standalone static page (not a Spring Boot module) for registering a browser for Firebase Cloud Messaging and receiving a test push notification — useful for exercising the `PushNConsumer` path without needing a real mobile client. Open `fcmNotificationTester/index.html` with your own Firebase web config to use it.
 
 ---
 
@@ -221,14 +254,18 @@ Kafka topics can be visually inspected via **Confluent Control Center** at `http
 
 > **Attach screenshots below** — one proof image per channel showing a successfully delivered notification (e.g. the received email, SMS, WhatsApp message, and push notification).
 
-### PUSH Notification
-<img width="354" height="113" alt="Image" src="https://github.com/user-attachments/assets/359563bf-8f30-4572-8671-dde479b132a0" />
-
 ### WhatsApp Notification
-<img width="1084" height="1582" alt="Image" src="https://github.com/user-attachments/assets/b14c74e7-2697-4782-aa41-e6e811502ef4" />
+<img width="1032" height="1599" alt="Image" src="https://github.com/user-attachments/assets/9085d9c2-5690-4210-9d83-ae2b5c3c8bad" />
+<img width="758" height="1600" alt="Image" src="https://github.com/user-attachments/assets/21081996-84f0-40d8-8af8-79a833c7e080" />
+<img width="1030" height="920" alt="Image" src="https://github.com/user-attachments/assets/987e3d93-f852-496b-9b5e-2a03fc040991" />
 
 ### Email Notification
-<img width="1247" height="650" alt="Image" src="https://github.com/user-attachments/assets/e7b9f6c6-bb8b-4ebe-9447-96bb95e86851" />
+<img width="485" height="1426" alt="Image" src="https://github.com/user-attachments/assets/9ff7ca9d-bc13-4acf-92c3-721e4a0ef52d" />
+<img width="1265" height="702" alt="Image" src="https://github.com/user-attachments/assets/dae7930d-38b9-41b6-9d38-82f43a75aa33" />
 
 ### SMS Notification
-<img width="1084" height="704" alt="Image" src="https://github.com/user-attachments/assets/f6c657c3-e1ee-4eed-9ddb-65c18595d9ea" />
+<img width="1045" height="438" alt="Image" src="https://github.com/user-attachments/assets/d5a3fb75-6d05-4e51-80e6-e668d7e996d6" />
+<img width="752" height="1600" alt="Image" src="https://github.com/user-attachments/assets/4d0ff43b-12bb-4d8d-97e7-04905ffc3b04" />
+
+### PUSH Notification
+<img width="369" height="558" alt="Image" src="https://github.com/user-attachments/assets/84db1c62-1a81-4703-b2e8-19f676c0574e" />
