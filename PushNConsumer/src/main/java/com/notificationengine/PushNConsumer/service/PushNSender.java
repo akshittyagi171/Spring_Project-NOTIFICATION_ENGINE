@@ -5,6 +5,7 @@ import com.google.firebase.messaging.MessagingErrorCode;
 import com.notificationengine.PushNConsumer.models.PushContent;
 import com.notificationengine.PushNConsumer.models.SendPushNResponse;
 import com.notificationengine.PushNConsumer.repo.UserRepository;
+import com.notificationengine.PushNConsumer.service.exceptions.RetryableVendorException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,18 +29,15 @@ public class PushNSender {
                 return new SendPushNResponse(400, "Bad Request: Missing FCM Token");
             }
 
-            // 1. Build the notification with Title and Body
             Notification.Builder notifBuilder = Notification.builder()
                     .setTitle(pushContent.getTitle())
                     .setBody(pushContent.getMessage());
 
-            // 2. Attach the image directly if the URL is provided
             if (pushContent.getMediaUrl() != null && !pushContent.getMediaUrl().isBlank()) {
                 notifBuilder.setImage(pushContent.getMediaUrl().trim());
                 log.info("Attached rich media URL to Push Notification ID: {}", pushContent.getNotificationId());
             }
 
-            // 3. Extract the Deep Link URL for the action
             String actionData = (pushContent.getAction() != null && pushContent.getAction().getUrl() != null)
                     ? pushContent.getAction().getUrl()
                     : "DEFAULT";
@@ -75,7 +73,7 @@ public class PushNSender {
             }
 
             log.warn("Firebase technical error occurred (Retrying...). Error Code: {}", errorCode);
-            throw new RuntimeException("FCM Gateway temporary failure: " + e.getMessage(), e);
+            throw new RetryableVendorException("FCM Gateway temporary failure: " + e.getMessage(), e);
 
         } catch (Exception e) {
             log.error("Critical internal failure during transmission setup for ID: {}", pushContent.getNotificationId(), e);

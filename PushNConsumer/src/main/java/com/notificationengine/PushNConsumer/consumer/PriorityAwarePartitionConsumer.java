@@ -3,6 +3,7 @@ package com.notificationengine.PushNConsumer.consumer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notificationengine.PushNConsumer.models.PushContent;
 import com.notificationengine.PushNConsumer.service.PushNProcessingService;
+import com.notificationengine.PushNConsumer.service.exceptions.FatalVendorException;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +21,6 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.notificationengine.PushNConsumer.constants.Constants.GROUP_ID;
 import static com.notificationengine.PushNConsumer.constants.Constants.TOPIC;
@@ -35,16 +34,14 @@ public class PriorityAwarePartitionConsumer {
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
 
-    private final ConcurrentHashMap<Integer, AtomicLong> activeMessageCounts = new ConcurrentHashMap<>();
-
     @RetryableTopic(
             attempts = "4",
             backoff = @Backoff(delay = 5000, multiplier = 3.0, maxDelay = 60000),
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
             dltStrategy = DltStrategy.FAIL_ON_ERROR,
-            include = {RuntimeException.class}
+            exclude = {FatalVendorException.class}
     )
-    @KafkaListener(id = GROUP_ID, topics = TOPIC, groupId = GROUP_ID, concurrency = "1")
+    @KafkaListener(id = GROUP_ID, topics = TOPIC, groupId = GROUP_ID, concurrency = "${notification.kafka.consumer.concurrency}")
     public void consume(ConsumerRecord<String, String> record,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
                         @Header(value = "correlationId", required = false) byte[] correlationIdBytes) {
@@ -55,42 +52,17 @@ public class PriorityAwarePartitionConsumer {
         MDC.put("correlationId", correlationId);
         log.debug("Record Intercepted from Partition: {}, Offset: {}", partition, record.offset());
 
-        activeMessageCounts.computeIfAbsent(partition, k -> new AtomicLong(0)).incrementAndGet();
-
         try {
-            evaluatePriorityThrottling(partition);
-            // Replaced PushNRequest with PushContent
             PushContent request = objectMapper.readValue(record.value(), PushContent.class);
-
             pushNProcessingService.processPushN(request);
-
+        } catch (FatalVendorException e) {
+            log.error("Fatal validation error on partition offset: {}. Routing to DLT.", record.offset(), e);
+            throw e;
         } catch (Exception e) {
-            log.error("Processing collapsed on partition entity offset target node: {}", record.offset(), e);
+            log.error("Processing collapsed on partition entity offset: {}", record.offset(), e);
             throw new RuntimeException("Triggering Retries: " + e.getMessage(), e);
         } finally {
-            activeMessageCounts.get(partition).decrementAndGet();
             MDC.remove("correlationId");
-        }
-    }
-
-    private void evaluatePriorityThrottling(int currentPartition) {
-        long p1Count = activeMessageCounts.getOrDefault(0, new AtomicLong(0)).get();
-        long p2Count = activeMessageCounts.getOrDefault(1, new AtomicLong(0)).get();
-
-        if (currentPartition == 1 && p1Count > 0) {
-            log.warn("Throttling current executor thread: P2 payload paused briefly due to active P1 streams.");
-            yieldExecutionControl();
-        } else if (currentPartition == 2 && (p1Count > 0 || p2Count > 0)) {
-            log.warn("Throttling current executor thread: P3 payload paused briefly due to active P1/P2 streams.");
-            yieldExecutionControl();
-        }
-    }
-
-    private void yieldExecutionControl() {
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
         }
     }
 
@@ -102,21 +74,19 @@ public class PriorityAwarePartitionConsumer {
                 ? new String(correlationIdBytes, StandardCharsets.UTF_8)
                 : "UNKNOWN-TRACE";
         MDC.put("correlationId", correlationId);
-        log.error("CRITICAL AUDIT: Final retry exhausted on consumer pipelines. Processing permanent failure tracking. Reason: {}", exceptionMessage);
+        log.error("CRITICAL AUDIT: DLT Invoked. Reason: {}", exceptionMessage);
         meterRegistry.counter("notification_dlt_total", "topic", record.topic()).increment();
+
         try {
             PushContent request = objectMapper.readValue(record.value(), PushContent.class);
-
             if (request != null && request.getNotificationId() != null) {
                 pushNProcessingService.handlePermanentFailure(request.getNotificationId(), exceptionMessage);
-                log.info("Successfully moved state to FAILED for notification ID: {}", request.getNotificationId());
             } else {
                 log.error("Unable to extract notificationId from the raw DLT payload record.");
             }
         } catch (Exception ex) {
-            log.error("Failed to process status changes inside custom DLT wrapper flow: ", ex);
+            log.error("Failed to process status changes inside DLT: ", ex);
         } finally {
-            // 2. Clean up Context
             MDC.remove("correlationId");
         }
     }

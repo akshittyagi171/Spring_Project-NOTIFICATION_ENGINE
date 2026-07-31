@@ -21,7 +21,7 @@ public class PushNNotificationTxManager {
     private final DeliveryLogRepository deliveryLogRepository;
 
     @Transactional
-    public void updateNotificationStateAndLog(Long notificationId) {
+    public void updateNotificationStateAndLog(Long notificationId, String message) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotificationNotFoundException(
                         "Notification resource entity not found for ID: " + notificationId
@@ -31,7 +31,7 @@ public class PushNNotificationTxManager {
         notificationRepository.save(notification);
         log.info("Notification status tracking updated to SENT for ID: {}", notificationId);
 
-        DeliveryLog logEntry = new DeliveryLog(notification, Channel.push, Status.sent, "Dispatched successfully via FCM channels.");
+        DeliveryLog logEntry = new DeliveryLog(notification, Channel.push, Status.sent, message);
         deliveryLogRepository.save(logEntry);
     }
 
@@ -56,4 +56,12 @@ public class PushNNotificationTxManager {
         );
         deliveryLogRepository.save(logEntry);
     }
+
+    @Transactional(readOnly = true)
+    public boolean isAlreadyProcessed(Long notificationId) {
+        return notificationRepository.findById(notificationId)
+                .map(notif -> Status.sent.equals(notif.getStatus()))
+                .orElse(false);
+    }
+
 }

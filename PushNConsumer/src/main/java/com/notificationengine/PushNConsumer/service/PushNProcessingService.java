@@ -15,16 +15,14 @@ public class PushNProcessingService {
     private final PushNNotificationTxManager txManager;
 
     public void processPushN(PushContent pushContent) {
-        SendPushNResponse response = vendorClient.sendPushNWithResilience(pushContent);
-
-        if (response.getStatus() >= 200 && response.getStatus() < 300) {
-            txManager.updateNotificationStateAndLog(pushContent.getNotificationId());
-        } else {
-            log.error("Notification ID {} explicitly rejected by provider gateway. Status: {}, Message: {}",
-                    pushContent.getNotificationId(), response.getStatus(), response.getMessage());
-
-            throw new RuntimeException("Outbound delivery failed with status code: " + response.getStatus());
+        if (txManager.isAlreadyProcessed(pushContent.getNotificationId())) {
+            log.warn("Idempotency hit: Notification ID {} is already marked as SENT. Discarding duplicate Kafka message.",
+                    pushContent.getNotificationId());
+            return;
         }
+
+        SendPushNResponse response = vendorClient.sendPushNWithResilience(pushContent);
+        txManager.updateNotificationStateAndLog(pushContent.getNotificationId(), response.getMessage());
     }
 
     public void handlePermanentFailure(Long notificationId, String exceptionMessage) {
