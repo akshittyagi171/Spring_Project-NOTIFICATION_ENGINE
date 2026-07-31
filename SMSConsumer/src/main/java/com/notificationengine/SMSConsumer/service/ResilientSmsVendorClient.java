@@ -2,8 +2,10 @@ package com.notificationengine.SMSConsumer.service;
 
 import com.notificationengine.SMSConsumer.models.SendSmsResponse;
 import com.notificationengine.SMSConsumer.models.SmsContent;
+import com.notificationengine.SMSConsumer.service.exceptions.FatalVendorException;
+import com.notificationengine.SMSConsumer.service.exceptions.RetryableVendorException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +20,7 @@ public class ResilientSmsVendorClient {
     private static final String RESILIENCE_INSTANCE = "smsVendor";
     private final MeterRegistry meterRegistry;
 
-    @Retry(name = RESILIENCE_INSTANCE)
+    @RateLimiter(name = RESILIENCE_INSTANCE)
     @CircuitBreaker(name = RESILIENCE_INSTANCE, fallbackMethod = "fallbackSmsVendorCall")
     public SendSmsResponse sendSmsWithResilience(SmsContent smsContent) {
         log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", smsContent.getNotificationId());
@@ -30,15 +32,27 @@ public class ResilientSmsVendorClient {
             return response;
         }
 
-        throw new RuntimeException("Vendor endpoint returned non-2xx response status code: " + response.getStatus());
+        if (response.getStatus() >= 400 && response.getStatus() < 500) {
+            log.error("Permanent vendor rejection for notification ID {}: {} (Status: {})",
+                    smsContent.getNotificationId(), response.getMessage(), response.getStatus());
+            meterRegistry.counter("notification_vendor_result_total", "channel", "sms", "status", "FATAL").increment();
+            throw new FatalVendorException(response.getMessage() + " with Status: " + response.getStatus());
+        }
+
+        throw new RetryableVendorException(response.getMessage() + " with Status: " + response.getStatus());
     }
 
     public SendSmsResponse fallbackSmsVendorCall(SmsContent smsContent, Throwable throwable) {
-        log.error("Circuit tripped or backend processing failed over. Reason: {}", throwable.getMessage());
+        log.error("Vendor call failed for notification ID {}. Reason: {}",
+                smsContent.getNotificationId(), throwable.getMessage());
         meterRegistry.counter("notification_vendor_result_total", "channel", "sms", "status", "FAILURE").increment();
-        SendSmsResponse failureResponse = new SendSmsResponse();
-        failureResponse.setStatus(503);
-        failureResponse.setMessage("Vendor gateway unavailable. Circuit active: " + throwable.getMessage());
-        return failureResponse;
+
+        if (throwable instanceof RuntimeException) {
+            throw (RuntimeException) throwable;
+        }
+        if (throwable instanceof Error) {
+            throw (Error) throwable;
+        }
+        throw new RetryableVendorException("Vendor call failed: " + throwable.getMessage(), throwable);
     }
 }

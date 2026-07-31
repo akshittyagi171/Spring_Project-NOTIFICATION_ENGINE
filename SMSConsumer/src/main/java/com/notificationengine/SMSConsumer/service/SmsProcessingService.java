@@ -15,16 +15,14 @@ public class SmsProcessingService {
     private final SmsNotificationTxManager txManager;
 
     public void processSms(SmsContent smsContent) {
-        SendSmsResponse response = vendorClient.sendSmsWithResilience(smsContent);
-
-        if (response.getStatus() >= 200 && response.getStatus() < 300) {
-            txManager.updateNotificationStateAndLog(smsContent.getNotificationId());
-        } else {
-            log.error("Notification ID {} explicitly rejected by provider gateway. Status: {}, Message: {}",
-                    smsContent.getNotificationId(), response.getStatus(), response.getMessage());
-
-            throw new RuntimeException("Outbound delivery failed with status code: " + response.getStatus());
+        if (txManager.isAlreadyProcessed(smsContent.getNotificationId())) {
+            log.warn("Idempotency hit: Notification ID {} is already marked as SENT. Discarding duplicate Kafka message.",
+                    smsContent.getNotificationId());
+            return;
         }
+
+        SendSmsResponse response = vendorClient.sendSmsWithResilience(smsContent);
+        txManager.updateNotificationStateAndLog(smsContent.getNotificationId(), response.getMessage());
     }
 
     public void handlePermanentFailure(Long notificationId, String exceptionMessage) {
