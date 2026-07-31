@@ -21,7 +21,7 @@ public class WhatsAppNotificationTxManager {
     private final DeliveryLogRepository deliveryLogRepository;
 
     @Transactional
-    public void updateNotificationStateAndLog(Long notificationId) {
+    public void updateNotificationStateAndLog(Long notificationId, String message) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotificationNotFoundException(
                         "Notification resource entity not found for ID: " + notificationId
@@ -31,7 +31,7 @@ public class WhatsAppNotificationTxManager {
         notificationRepository.save(notification);
         log.info("Notification status tracking updated to SENT for ID: {}", notificationId);
 
-        DeliveryLog logEntry = new DeliveryLog(notification, Channel.whatsapp, Status.sent, "Dispatched successfully via Twilio channels.");
+        DeliveryLog logEntry = new DeliveryLog(notification, Channel.whatsapp, Status.sent, message);
         deliveryLogRepository.save(logEntry);
     }
 
@@ -55,5 +55,12 @@ public class WhatsAppNotificationTxManager {
                 "Delivery failed after exhausting all Kafka retries. Reason: " + cleanReason
         );
         deliveryLogRepository.save(logEntry);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isAlreadyProcessed(Long notificationId) {
+        return notificationRepository.findById(notificationId)
+                .map(notif -> Status.sent.equals(notif.getStatus()))
+                .orElse(false);
     }
 }
