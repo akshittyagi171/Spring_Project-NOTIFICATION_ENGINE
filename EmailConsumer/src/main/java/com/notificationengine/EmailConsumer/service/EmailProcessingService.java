@@ -15,16 +15,14 @@ public class EmailProcessingService {
     private final EmailNotificationTxManager txManager;
 
     public void processEmail(EmailContent emailContent) {
-        SendEmailResponse response = vendorClient.sendEmailWithResilience(emailContent);
-
-        if (response.getStatus() >= 200 && response.getStatus() < 300) {
-            txManager.updateNotificationStateAndLog(emailContent.getNotificationId());
-        } else {
-            log.error("Notification ID {} explicitly rejected by provider gateway. Status: {}, Message: {}",
-                    emailContent.getNotificationId(), response.getStatus(), response.getMessage());
-
-            throw new RuntimeException("Outbound delivery failed with status code: " + response.getStatus());
+        if (txManager.isAlreadyProcessed(emailContent.getNotificationId())) {
+            log.warn("Idempotency hit: Notification ID {} is already marked as SENT. Discarding duplicate Kafka message.",
+                    emailContent.getNotificationId());
+            return;
         }
+
+        SendEmailResponse response = vendorClient.sendEmailWithResilience(emailContent);
+        txManager.updateNotificationStateAndLog(emailContent.getNotificationId(), response.getMessage());
     }
 
     public void handlePermanentFailure(Long notificationId, String exceptionMessage) {
