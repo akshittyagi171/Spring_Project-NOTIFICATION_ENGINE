@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import static com.notificationengine.EmailConsumer.constants.Constants.PARTIAL_DELIVERY_STATUS;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -26,7 +28,7 @@ public class ResilientEmailVendorClient {
         log.info("Attempting dispatch via external vendor gateway for transaction ID: {}", emailContent.getNotificationId());
         SendEmailResponse response = emailSender.sendEmail(emailContent);
 
-        if (response.getStatus() == EmailSender.PARTIAL_DELIVERY_STATUS) {
+        if (response.getStatus() == PARTIAL_DELIVERY_STATUS) {
             log.error("Partial delivery for notification ID {}: {}", emailContent.getNotificationId(), response.getMessage());
             meterRegistry.counter("notification_vendor_result_total", "channel", "email", "status", "PARTIAL").increment();
             throw new FatalVendorException(response.getMessage());

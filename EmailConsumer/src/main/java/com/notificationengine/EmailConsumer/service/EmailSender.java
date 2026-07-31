@@ -22,12 +22,12 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+import static com.notificationengine.EmailConsumer.constants.Constants.PARTIAL_DELIVERY_STATUS;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailSender {
-
-    public static final int PARTIAL_DELIVERY_STATUS = 291;
 
     private final SendGrid sendGridClient;
     private final RestTemplate restTemplate;
