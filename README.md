@@ -111,7 +111,7 @@ A **custom Kafka partitioner** in `NotificationProcessor` also maps priority →
 Every service exposes Actuator health and Prometheus-formatted metrics (`/actuator/prometheus`) via Micrometer, and ships structured logs to Loki through `loki-logback-appender` — all tagged with `spring.application.name` and the request's correlation ID.
 
 - **Prometheus** scrapes each of the six services (gateway, per-priority processors, and the four channel consumers) plus a dedicated **Kafka Exporter** for broker/topic-level metrics (consumer lag, partition throughput, etc.).
-- **Grafana** visualizes it all on a pre-built dashboard (`grafana_notification_engine_dashboard.json`) covering request rates, delivery success/failure by channel, circuit breaker state, and Kafka consumer lag.
+- **Grafana** visualizes it all on a pre-built dashboard (`grafana_notification_engine_dashboard.json`,`grafana_notification_engine_logs_dashboard.json`) covering request rates, delivery success/failure by channel, circuit breaker state, and Kafka consumer lag.
 - **Loki** centralizes logs from all six services so a single correlation ID can be searched to pull the full trace of one notification's journey, end to end.
 
 This turns "did the OTP actually go out, and if not, where did it die?" from a multi-service log-grepping exercise into a single dashboard query.
@@ -120,6 +120,7 @@ This turns "did the OTP actually go out, and if not, where did it die?" from a m
 <img width="1462" height="773" alt="Image" src="https://github.com/user-attachments/assets/45f6de28-bced-46b0-bc23-7670b438a6cf" />
 <img width="1469" height="691" alt="Image" src="https://github.com/user-attachments/assets/7c7cfcc9-d8e2-4158-a271-96b546dd5daa" />
 <img width="1469" height="780" alt="Image" src="https://github.com/user-attachments/assets/3130afae-156a-4223-bb1a-a68b8effd05d" />
+<img width="1224" height="792" alt="Image" src="https://github.com/user-attachments/assets/8f614b67-8554-45fb-912f-c1c21594917b" />
 
 ---
 
