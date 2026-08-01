@@ -92,6 +92,8 @@ The correlation ID generated at the gateway is propagated as a Kafka message hea
 | `email-topic`, `sms-topic`, `whatsapp-topic`, `push-n-topic` | `NotificationProcessor` | corresponding `*Consumer` service | Fan-out by delivery channel; each channel scales and fails independently |
 | `<topic>-retry-N` / DLT | Spring Kafka retry mechanism | Same consumer, then a dead-letter handler | Automatic backoff retries (4 attempts, exponential backoff) before permanently marking a notification `failed` |
 
+<img width="1458" height="778" alt="Image" src="https://github.com/user-attachments/assets/efc559db-e31f-4d31-847f-d3bdade4a488" />
+
 A **custom Kafka partitioner** in `NotificationProcessor` also maps priority → partition index on the channel topics, so even within, say, `email-topic`, priority-1 traffic is isolated from priority-3 traffic at the partition level — and the consumer side adds a light throttling check so a flood of low-priority messages yields to any in-flight high-priority ones. Every message on every topic carries the originating correlation ID as a Kafka header, which each consumer restores into its own MDC context for traceable logging.
 
 ---
