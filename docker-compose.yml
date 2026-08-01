@@ -49,21 +49,17 @@ services:
     networks:
       - notification-network
 
-  # --- Confluent Control Center (UI for Kafka) ---
-  control-center:
-    image: confluentinc/cp-enterprise-control-center:7.5.0
-    container_name: control-center
+  # --- Kafbat UI (Replacing Control Center) ---
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:latest
+    container_name: kafka-ui
     depends_on:
       - broker
     ports:
-      - "9021:9021"
+      - "9021:8080"
     environment:
-      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:29092'
-      CONTROL_CENTER_REPLICATION_FACTOR: 1
-      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-      PORT: 9021
+      KAFKA_CLUSTERS_0_NAME: local-notification-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:29092
     networks:
       - notification-network
 
@@ -113,6 +109,7 @@ services:
       - "9308:9308"
     depends_on:
       - broker
+    restart: always
     networks:
       - notification-network
 
