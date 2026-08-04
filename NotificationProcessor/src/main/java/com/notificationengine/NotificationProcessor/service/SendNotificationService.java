@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -54,19 +55,19 @@ public class SendNotificationService {
         this.priorityRoutingKey = priorityRoutingKey;
     }
 
-    public void sendSmsRequest(SmsContent smsContent, User user) {
+    public void sendSmsRequest(SmsContent smsContent, User user, String idempotencyKey) {
         Notification notification = null;
         try {
-            notification = notificationRepository.save(new Notification(user, Channel.sms, smsContent.getMessage(), objectMapper.writeValueAsString(smsContent), notificationHelperService.getSmsHash(smsContent, user.getId())));
+            notification = notificationRepository.save(new Notification(user, Channel.sms, smsContent.getMessage(), objectMapper.writeValueAsString(smsContent), notificationHelperService.getNotificationHash(idempotencyKey, user.getId(), Channel.sms)));
             smsContent.setNotificationId(notification.getId());
         } catch (JsonProcessingException e) {
             log.error("Exception parsing SMS requestContent to String: {}", e.toString());
-        } catch (Exception e) {
-            if (e.toString().contains("Duplicate entry")) {
-                throw new DuplicateNotificationFoundException("Duplicate notification request. " + smsContent.toString());
-            } else {
-                throw e;
+        } catch (DataIntegrityViolationException e) {
+            if (isDuplicateNotificationConstraint(e)) {
+                throw new DuplicateNotificationFoundException("Duplicate notification request. " + smsContent);
             }
+            log.error("Unexpected data integrity violation saving SMS notification for userId {}: {}", user.getId(), e.getMostSpecificCause().getMessage(), e);
+            throw e;
         }
 
         boolean isSmsAllowed = notificationHelperService.isNotificationAllowed_PreferenceCheck(user.getId(), Channel.sms);
@@ -87,19 +88,19 @@ public class SendNotificationService {
         }
     }
 
-    public void sendPushNRequest(PushContent pushNRequest, User user) {
+    public void sendPushNRequest(PushContent pushNRequest, User user, String idempotencyKey) {
         Notification notification = null;
         try {
-            notification = notificationRepository.save(new Notification(user, Channel.push, pushNRequest.getTitle() + pushNRequest.getMessage(), objectMapper.writeValueAsString(pushNRequest), notificationHelperService.getPushNHash(pushNRequest, user.getId())));
+            notification = notificationRepository.save(new Notification(user, Channel.push, pushNRequest.getTitle() + pushNRequest.getMessage(), objectMapper.writeValueAsString(pushNRequest), notificationHelperService.getNotificationHash(idempotencyKey, user.getId(), Channel.push)));
             pushNRequest.setNotificationId(notification.getId());
         } catch (JsonProcessingException e) {
             log.error("Exception parsing Push requestContent to String: {}", e.toString());
-        } catch (Exception e) {
-            if (e.toString().contains("Duplicate entry")) {
-                throw new DuplicateNotificationFoundException("Duplicate notification request. " + pushNRequest.toString());
-            } else {
-                throw e;
+        } catch (DataIntegrityViolationException e) {
+            if (isDuplicateNotificationConstraint(e)) {
+                throw new DuplicateNotificationFoundException("Duplicate notification request. " + pushNRequest);
             }
+            log.error("Unexpected data integrity violation saving Push notification for userId {}: {}", user.getId(), e.getMostSpecificCause().getMessage(), e);
+            throw e;
         }
 
         boolean isPushNAllowed = notificationHelperService.isNotificationAllowed_PreferenceCheck(user.getId(), Channel.push);
@@ -120,20 +121,20 @@ public class SendNotificationService {
         }
     }
 
-    public void sendEmailRequest(EmailContent emailContent, User user) {
+    public void sendEmailRequest(EmailContent emailContent, User user, String idempotencyKey) {
         Notification notification = null;
         try {
             notification = notificationRepository.save(new Notification(user, Channel.email, "emailSubject: " + emailContent.getSubject() + " message: " + emailContent.getMessage(),
-                    objectMapper.writeValueAsString(emailContent), notificationHelperService.getEmailHash(emailContent, user.getId())));
+                    objectMapper.writeValueAsString(emailContent), notificationHelperService.getNotificationHash(idempotencyKey, user.getId(), Channel.email)));
             emailContent.setNotificationId(notification.getId());
         } catch (JsonProcessingException e) {
             log.error("Exception parsing Email requestContent to String: {}", e.toString());
-        } catch (Exception e) {
-            if (e.toString().contains("Duplicate entry")) {
-                throw new DuplicateNotificationFoundException("Duplicate notification request. " + emailContent.toString());
-            } else {
-                throw e;
+        } catch (DataIntegrityViolationException e) {
+            if (isDuplicateNotificationConstraint(e)) {
+                throw new DuplicateNotificationFoundException("Duplicate notification request. " + emailContent);
             }
+            log.error("Unexpected data integrity violation saving Email notification for userId {}: {}", user.getId(), e.getMostSpecificCause().getMessage(), e);
+            throw e;
         }
 
         boolean isEmailAllowed = notificationHelperService.isNotificationAllowed_PreferenceCheck(user.getId(), Channel.email);
@@ -154,19 +155,19 @@ public class SendNotificationService {
         }
     }
 
-    public void sendWhatsAppRequest(WhatsappContent whatsAppContent, User user) {
+    public void sendWhatsAppRequest(WhatsappContent whatsAppContent, User user, String idempotencyKey) {
         Notification notification = null;
         try {
-            notification = notificationRepository.save(new Notification(user, Channel.whatsapp, whatsAppContent.getMessage(), objectMapper.writeValueAsString(whatsAppContent), notificationHelperService.getWhatsAppHash(whatsAppContent, user.getId())));
+            notification = notificationRepository.save(new Notification(user, Channel.whatsapp, whatsAppContent.getMessage(), objectMapper.writeValueAsString(whatsAppContent), notificationHelperService.getNotificationHash(idempotencyKey, user.getId(), Channel.whatsapp)));
             whatsAppContent.setNotificationId(notification.getId());
         } catch (JsonProcessingException e) {
             log.error("Exception parsing WhatsApp requestContent to String: {}", e.toString());
-        } catch (Exception e) {
-            if (e.toString().contains("Duplicate entry")) {
-                throw new DuplicateNotificationFoundException("Duplicate notification request. " + whatsAppContent.toString());
-            } else {
-                throw e;
+        } catch (DataIntegrityViolationException e) {
+            if (isDuplicateNotificationConstraint(e)) {
+                throw new DuplicateNotificationFoundException("Duplicate notification request. " + whatsAppContent);
             }
+            log.error("Unexpected data integrity violation saving WhatsApp notification for userId {}: {}", user.getId(), e.getMostSpecificCause().getMessage(), e);
+            throw e;
         }
 
         boolean isWhatsAppAllowed = notificationHelperService.isNotificationAllowed_PreferenceCheck(user.getId(), Channel.whatsapp);
@@ -189,6 +190,12 @@ public class SendNotificationService {
 
     private <T> String prepareMessage(T request) throws JsonProcessingException {
         return this.objectMapper.writeValueAsString(request);
+    }
+
+    private boolean isDuplicateNotificationConstraint(DataIntegrityViolationException e) {
+        Throwable rootCause = e.getMostSpecificCause();
+        String rootMessage = rootCause.getMessage();
+        return rootMessage != null && rootMessage.toLowerCase().contains(NOTIFICATION_UNIQUE_CONSTRAINT_NAME.toLowerCase());
     }
 
     private void dispatchToKafkaWithTracing(String topic, String routingKey, String payload) {

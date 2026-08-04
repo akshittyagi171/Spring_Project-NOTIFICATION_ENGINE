@@ -5,4 +5,5 @@ public class Constants {
     public static final String EMAIL_TOPIC = "email-topic";
     public static final String PUSH_N_TOPIC = "push-n-topic";
     public static final String WHATSAPP_TOPIC = "whatsapp-topic";
+    public static final String NOTIFICATION_UNIQUE_CONSTRAINT_NAME = "uk_user_channel_hash";
 }

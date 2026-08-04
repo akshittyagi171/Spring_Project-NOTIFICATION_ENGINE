@@ -44,6 +44,10 @@ public class NotificationsController {
             // 1. Validate the payload structure
             notificationProcessingService.validateRequest(request);
 
+            // 1b. Ensure every request carries a stable idempotency key before it
+            // touches Kafka, so retries of this exact message dedupe correctly downstream.
+            notificationProcessingService.assignIdempotencyKey(request);
+
             // 2. Resolve or provision recipient user profiles
             List<RecipientResponse> processedRecipients = userService.processRecipients(request.getRecipients());
 

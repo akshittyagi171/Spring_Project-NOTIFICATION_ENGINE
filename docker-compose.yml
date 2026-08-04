@@ -12,6 +12,7 @@ services:
       MYSQL_DATABASE: notification_engine
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./notification_engine.sql:/docker-entrypoint-initdb.d/notification_engine.sql
     networks:
       - notification-network
 

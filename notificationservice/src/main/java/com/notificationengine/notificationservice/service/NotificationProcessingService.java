@@ -7,12 +7,14 @@ import com.notificationengine.notificationservice.models.dtos.request.Notificati
 import com.notificationengine.notificationservice.models.dtos.request.RecipientRequest;
 import com.notificationengine.notificationservice.repo.TemplateRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -24,6 +26,13 @@ public class NotificationProcessingService {
     public NotificationProcessingService(RedisService redisService, TemplateRepository templateRepository) {
         this.redisService = redisService;
         this.templateRepository = templateRepository;
+    }
+
+    public void assignIdempotencyKey(NotificationRequest request) {
+        if (request.getIdempotencyKey() == null || request.getIdempotencyKey().isBlank()) {
+            String correlationId = MDC.get("correlationId");
+            request.setIdempotencyKey(correlationId != null ? correlationId : UUID.randomUUID().toString());
+        }
     }
 
     public void validateRequest(NotificationRequest request) {

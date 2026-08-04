@@ -5,10 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notificationengine.NotificationProcessor.models.db.Preference;
 import com.notificationengine.NotificationProcessor.models.enums.Channel;
-import com.notificationengine.NotificationProcessor.models.dtos.content.EmailContent;
-import com.notificationengine.NotificationProcessor.models.dtos.content.PushContent;
-import com.notificationengine.NotificationProcessor.models.dtos.content.SmsContent;
-import com.notificationengine.NotificationProcessor.models.dtos.content.WhatsappContent;
 import com.notificationengine.NotificationProcessor.service.exceptions.PreferenceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -80,19 +76,11 @@ public class NotificationHelperService {
         }
     }
 
-    public String getSmsHash(SmsContent smsContent, Long userId) {
-        return DigestUtils.sha256Hex(currentPriority + "&" + smsContent.getMessage() + "&" + smsContent.getMobileNumber() + "&" + userId + "&" + LocalTime.now());
-    }
-
-    public String getWhatsAppHash(WhatsappContent whatsAppContent, Long userId) {
-        return DigestUtils.sha256Hex(currentPriority + "&" + whatsAppContent.getMessage() + "&" + whatsAppContent.getMobileNumber() + "&" + userId + "&" + LocalTime.now());
-    }
-
-    public String getPushNHash(PushContent pushNRequest, Long userId) {
-        return DigestUtils.sha256Hex(currentPriority + "&" + pushNRequest.getTitle() + "&" + pushNRequest.getMessage() + "&" + pushNRequest.getAction() + "&" + userId + "&" + LocalTime.now());
-    }
-
-    public String getEmailHash(EmailContent emailContent, Long userId) {
-        return DigestUtils.sha256Hex(currentPriority + "&" + emailContent.getSubject() + "&" + emailContent.getMessage() + "&" + "&" + userId + "&" + LocalTime.now());
+    public String getNotificationHash(String idempotencyKey, Long userId, Channel channel) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            log.error("Missing idempotencyKey for userId={}, channel={} — falling back to a random key (dedup will not apply to this message)", userId, channel);
+            idempotencyKey = java.util.UUID.randomUUID().toString();
+        }
+        return DigestUtils.sha256Hex(idempotencyKey + "&" + userId + "&" + channel);
     }
 }

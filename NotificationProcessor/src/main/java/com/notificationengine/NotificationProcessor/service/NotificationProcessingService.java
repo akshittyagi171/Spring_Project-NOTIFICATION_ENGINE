@@ -50,22 +50,23 @@ public class NotificationProcessingService {
             }
 
             Long userId = Long.parseLong(recipient.getUserId());
+            String idempotencyKey = notificationRequest.getIdempotencyKey();
             try {
                 User user = userCacheService.findById(userId)
                         .orElseThrow(() -> new UserPrincipalNotFoundException("User with userId: " + userId + " Not found"));
 
                 // 3. Dispatch to requested and present channels
                 if (channels.contains(Channel.email) && contentRequest.getEmail() != null) {
-                    safeExecute(() -> prepareAndSendEmailNotification(contentRequest.getEmail(), user), "Email");
+                    safeExecute(() -> prepareAndSendEmailNotification(contentRequest.getEmail(), user, idempotencyKey), "Email");
                 }
                 if (channels.contains(Channel.sms) && contentRequest.getSms() != null) {
-                    safeExecute(() -> prepareAndSendSMSNotification(contentRequest.getSms(), user), "SMS");
+                    safeExecute(() -> prepareAndSendSMSNotification(contentRequest.getSms(), user, idempotencyKey), "SMS");
                 }
                 if (channels.contains(Channel.whatsapp) && contentRequest.getWhatsapp() != null) {
-                    safeExecute(() -> prepareAndSendWhatsAppNotification(contentRequest.getWhatsapp(), user), "WhatsApp");
+                    safeExecute(() -> prepareAndSendWhatsAppNotification(contentRequest.getWhatsapp(), user, idempotencyKey), "WhatsApp");
                 }
                 if (channels.contains(Channel.push) && contentRequest.getPush() != null) {
-                    safeExecute(() -> prepareAndSendPushNotification(contentRequest.getPush(), user), "Push");
+                    safeExecute(() -> prepareAndSendPushNotification(contentRequest.getPush(), user, idempotencyKey), "Push");
                 }
 
             } catch (UserPrincipalNotFoundException e) {
@@ -117,7 +118,7 @@ public class NotificationProcessingService {
 
     // --- Dispatchers mapped to new Content Objects ---
 
-    private void prepareAndSendEmailNotification(EmailRequest inboundEmail, User user) {
+    private void prepareAndSendEmailNotification(EmailRequest inboundEmail, User user, String idempotencyKey) {
         EmailContent emailContent = EmailContent.builder()
                 .emailId(user.getEmail())
                 .templateName(inboundEmail.getTemplateName())
@@ -128,13 +129,13 @@ public class NotificationProcessingService {
                 .build();
 
         try {
-            sendNotificationService.sendEmailRequest(emailContent, user);
+            sendNotificationService.sendEmailRequest(emailContent, user, idempotencyKey);
         } catch (DuplicateNotificationFoundException e) {
             log.error("Duplicate Email Request: {}", e.getMessage());
         }
     }
 
-    private void prepareAndSendWhatsAppNotification(WhatsappRequest inboundWhatsapp, User user) {
+    private void prepareAndSendWhatsAppNotification(WhatsappRequest inboundWhatsapp, User user, String idempotencyKey) {
         WhatsappContent whatsAppContent = WhatsappContent.builder()
                 .mobileNumber(user.getPhone())
                 .templateName(inboundWhatsapp.getTemplateName())
@@ -144,13 +145,13 @@ public class NotificationProcessingService {
                 .build();
 
         try {
-            sendNotificationService.sendWhatsAppRequest(whatsAppContent, user);
+            sendNotificationService.sendWhatsAppRequest(whatsAppContent, user, idempotencyKey);
         } catch (DuplicateNotificationFoundException e) {
             log.error("Duplicate WhatsApp Request: {}", e.getMessage());
         }
     }
 
-    private void prepareAndSendPushNotification(PushRequest inboundPush, User user) {
+    private void prepareAndSendPushNotification(PushRequest inboundPush, User user, String idempotencyKey) {
         // Mapping Push Action explicitly to decouple the nested action object
         PushContent.PushAction mappedAction = null;
         if (inboundPush.getAction() != null) {
@@ -171,13 +172,13 @@ public class NotificationProcessingService {
                 .build();
 
         try {
-            sendNotificationService.sendPushNRequest(pushNContent, user);
+            sendNotificationService.sendPushNRequest(pushNContent, user, idempotencyKey);
         } catch (DuplicateNotificationFoundException e) {
             log.error("Duplicate Push Request: {}", e.getMessage());
         }
     }
 
-    private void prepareAndSendSMSNotification(SmsRequest inboundSms, User user) {
+    private void prepareAndSendSMSNotification(SmsRequest inboundSms, User user, String idempotencyKey) {
         SmsContent smsContent = SmsContent.builder()
                 .mobileNumber(user.getPhone())
                 .templateName(inboundSms.getTemplateName())
@@ -186,7 +187,7 @@ public class NotificationProcessingService {
                 .build();
 
         try {
-            sendNotificationService.sendSmsRequest(smsContent, user);
+            sendNotificationService.sendSmsRequest(smsContent, user, idempotencyKey);
         } catch (DuplicateNotificationFoundException e) {
             log.error("Duplicate SMS Request: {}", e.getMessage());
         }

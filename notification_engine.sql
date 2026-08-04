@@ -44,7 +44,7 @@ CREATE TABLE `notifications` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `priority` enum('1','2','3') NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `user_id` (`user_id`,`channel`,`notification_hash`),
+  UNIQUE KEY `uk_user_channel_hash` (`user_id`,`channel`,`notification_hash`),
   KEY `user_id_2` (`user_id`),
   KEY `status` (`status`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE

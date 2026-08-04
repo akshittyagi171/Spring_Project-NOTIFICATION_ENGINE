@@ -15,4 +15,5 @@ public class NotificationRequest {
     private List<String> channels;
     private List<RecipientRequest> recipients;
     private ContentRequest content;
+    private String idempotencyKey;
 }
