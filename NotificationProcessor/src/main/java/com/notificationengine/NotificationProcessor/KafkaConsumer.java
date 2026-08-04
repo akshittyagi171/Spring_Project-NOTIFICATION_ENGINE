@@ -21,14 +21,15 @@ public class KafkaConsumer {
     private final NotificationProcessingService notificationProcessingService;
     private final ObjectMapper mapper;
 
-    public KafkaConsumer(NotificationProcessingService notificationProcessingService, ObjectMapper mapper){
+    public KafkaConsumer(NotificationProcessingService notificationProcessingService, ObjectMapper mapper) {
         this.notificationProcessingService = notificationProcessingService;
         this.mapper = mapper;
     }
 
-    @KafkaListener(topics = "#{'${notification.processor.topic}'}")
+    @KafkaListener(topics = "#{'${notification.processor.topic}'}",
+            concurrency = "${notification.kafka.consumer.concurrency}")
     public void consumeNotificationRequest(ConsumerRecord<String, String> record,
-                                           @Header(value = "correlationId", required = false) byte[] correlationIdBytes){
+                                           @Header(value = "correlationId", required = false) byte[] correlationIdBytes) {
 
         String correlationId = correlationIdBytes != null
                 ? new String(correlationIdBytes, StandardCharsets.UTF_8)

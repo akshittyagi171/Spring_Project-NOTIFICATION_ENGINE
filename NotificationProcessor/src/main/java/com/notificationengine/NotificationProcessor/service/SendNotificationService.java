@@ -2,7 +2,6 @@ package com.notificationengine.NotificationProcessor.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.NotificationProcessor.models.db.DeliveryLog;
 import com.notificationengine.NotificationProcessor.models.db.Notification;
 import com.notificationengine.NotificationProcessor.models.db.User;
 import com.notificationengine.NotificationProcessor.models.enums.Channel;
@@ -11,7 +10,6 @@ import com.notificationengine.NotificationProcessor.models.dtos.content.EmailCon
 import com.notificationengine.NotificationProcessor.models.dtos.content.PushContent;
 import com.notificationengine.NotificationProcessor.models.dtos.content.SmsContent;
 import com.notificationengine.NotificationProcessor.models.dtos.content.WhatsappContent;
-import com.notificationengine.NotificationProcessor.repo.DeliveryLogRepository;
 import com.notificationengine.NotificationProcessor.repo.NotificationRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -34,7 +32,7 @@ public class SendNotificationService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
     private final NotificationRepository notificationRepository;
-    private final DeliveryLogRepository deliveryLogRepository;
+    private final DeliveryLogAsyncService deliveryLogAsyncService;
     private final NotificationHelperService notificationHelperService;
     private final MeterRegistry meterRegistry;
 
@@ -42,7 +40,7 @@ public class SendNotificationService {
 
     public SendNotificationService(KafkaTemplate<String, String> kafkaTemplate,
                                    NotificationRepository notificationRepository,
-                                   DeliveryLogRepository deliveryLogRepository,
+                                   DeliveryLogAsyncService deliveryLogAsyncService,
                                    ObjectMapper objectMapper,
                                    NotificationHelperService notificationHelperService,
                                    MeterRegistry meterRegistry,
@@ -50,7 +48,7 @@ public class SendNotificationService {
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
         this.notificationRepository = notificationRepository;
-        this.deliveryLogRepository = deliveryLogRepository;
+        this.deliveryLogAsyncService = deliveryLogAsyncService;
         this.notificationHelperService = notificationHelperService;
         this.meterRegistry = meterRegistry;
         this.priorityRoutingKey = priorityRoutingKey;
@@ -78,14 +76,14 @@ public class SendNotificationService {
                 String notificationString = prepareMessage(smsContent);
                 dispatchToKafkaWithTracing(SMS_TOPIC, priorityRoutingKey, notificationString);
                 meterRegistry.counter("notifications_sent_total", "channel", "sms").increment();
-                deliveryLogRepository.save(new DeliveryLog(notification, Channel.sms, Status.pending, "Scheduled to kafka"));
-                log.info("SMS sent to kafka. Delivery Log updated. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
+                deliveryLogAsyncService.saveAsync(notification, Channel.sms, Status.pending, "Scheduled to kafka");
+                log.info("SMS sent to kafka. Delivery Log update queued. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
             } catch (Exception e) {
                 log.error("Failed to forward sms notification {} to Kafka: ", smsContent, e);
             }
         } else {
             log.info("Preference: Not sending SMS as per user preferences. UserId: {}, SmsRequest: {}", user.getId(), smsContent);
-            deliveryLogRepository.save(new DeliveryLog(notification, Channel.sms, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences"));
+            deliveryLogAsyncService.saveAsync(notification, Channel.sms, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences");
         }
     }
 
@@ -111,14 +109,14 @@ public class SendNotificationService {
                 String notificationString = prepareMessage(pushNRequest);
                 dispatchToKafkaWithTracing(PUSH_N_TOPIC, priorityRoutingKey, notificationString);
                 meterRegistry.counter("notifications_sent_total", "channel", "push").increment();
-                deliveryLogRepository.save(new DeliveryLog(notification, Channel.push, Status.pending, "Scheduled to kafka"));
-                log.info("Push Notification sent to kafka. Delivery log updated. UserId: {}, PushNRequest: {}", user.getId(), pushNRequest);
+                deliveryLogAsyncService.saveAsync(notification, Channel.push, Status.pending, "Scheduled to kafka");
+                log.info("Push Notification sent to kafka. Delivery log update queued. UserId: {}, PushNRequest: {}", user.getId(), pushNRequest);
             } catch (Exception e) {
                 log.error("Failed to forward Push notification {} to Kafka: ", pushNRequest, e);
             }
         } else {
             log.info("Preference: Not sending Push Notification as per user preferences. UserId: {}, PushNRequest: {}", user.getId(), pushNRequest);
-            deliveryLogRepository.save(new DeliveryLog(notification, Channel.push, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences"));
+            deliveryLogAsyncService.saveAsync(notification, Channel.push, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences");
         }
     }
 
@@ -145,14 +143,14 @@ public class SendNotificationService {
                 String notificationString = prepareMessage(emailContent);
                 dispatchToKafkaWithTracing(EMAIL_TOPIC, priorityRoutingKey, notificationString);
                 meterRegistry.counter("notifications_sent_total", "channel", "email").increment();
-                deliveryLogRepository.save(new DeliveryLog(notification, Channel.email, Status.pending, "Scheduled to kafka"));
-                log.info("Email is sent to kafka. Delivery Log updated. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
+                deliveryLogAsyncService.saveAsync(notification, Channel.email, Status.pending, "Scheduled to kafka");
+                log.info("Email is sent to kafka. Delivery Log update queued. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
             } catch (Exception e) {
                 log.error("Failed to forward Email notification {} to Kafka: ", emailContent, e);
             }
         } else {
             log.info("Preference: Not sending Email Notification as per user preferences. UserId: {}, EmailRequest: {}", user.getId(), emailContent);
-            deliveryLogRepository.save(new DeliveryLog(notification, Channel.email, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences"));
+            deliveryLogAsyncService.saveAsync(notification, Channel.email, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences");
         }
     }
 
@@ -178,14 +176,14 @@ public class SendNotificationService {
                 String notificationString = prepareMessage(whatsAppContent);
                 dispatchToKafkaWithTracing(WHATSAPP_TOPIC, priorityRoutingKey, notificationString);
                 meterRegistry.counter("notifications_sent_total", "channel", "whatsapp").increment();
-                deliveryLogRepository.save(new DeliveryLog(notification, Channel.whatsapp, Status.pending, "Scheduled to kafka"));
-                log.info("WhatsApp sent to kafka. Delivery Log updated. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
+                deliveryLogAsyncService.saveAsync(notification, Channel.whatsapp, Status.pending, "Scheduled to kafka");
+                log.info("WhatsApp sent to kafka. Delivery Log update queued. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
             } catch (Exception e) {
                 log.error("Failed to forward WhatsApp notification {} to Kafka: ", whatsAppContent, e);
             }
         } else {
             log.info("Preference: Not sending WhatsApp as per user preferences. UserId: {}, WhatsAppRequest: {}", user.getId(), whatsAppContent);
-            deliveryLogRepository.save(new DeliveryLog(notification, Channel.whatsapp, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences"));
+            deliveryLogAsyncService.saveAsync(notification, Channel.whatsapp, Status.failed, "Not sending notification as per user: " + user.getId() + " preferences");
         }
     }
 

@@ -7,7 +7,6 @@ import com.notificationengine.NotificationProcessor.models.enums.Channel;
 import com.notificationengine.NotificationProcessor.models.db.Template;
 import com.notificationengine.NotificationProcessor.models.db.User;
 import com.notificationengine.NotificationProcessor.repo.TemplateRepository;
-import com.notificationengine.NotificationProcessor.repo.UserRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
 import com.notificationengine.NotificationProcessor.service.exceptions.PlaceholderNotFoundInRequestException;
 import com.notificationengine.NotificationProcessor.service.exceptions.TemplateNotFoundException;
@@ -25,13 +24,13 @@ public class NotificationProcessingService {
 
     private final ObjectMapper objectMapper;
     private final TemplateRepository templateRepository;
-    private final UserRepository userRepository;
+    private final UserCacheService userCacheService;
     private final SendNotificationService sendNotificationService;
 
-    public NotificationProcessingService(ObjectMapper objectMapper, TemplateRepository templateRepository, UserRepository userRepository, SendNotificationService sendNotificationService) {
+    public NotificationProcessingService(ObjectMapper objectMapper, TemplateRepository templateRepository, UserCacheService userCacheService, SendNotificationService sendNotificationService) {
         this.objectMapper = objectMapper;
         this.templateRepository = templateRepository;
-        this.userRepository = userRepository;
+        this.userCacheService = userCacheService;
         this.sendNotificationService = sendNotificationService;
     }
 
@@ -52,7 +51,7 @@ public class NotificationProcessingService {
 
             Long userId = Long.parseLong(recipient.getUserId());
             try {
-                User user = userRepository.findById(userId)
+                User user = userCacheService.findById(userId)
                         .orElseThrow(() -> new UserPrincipalNotFoundException("User with userId: " + userId + " Not found"));
 
                 // 3. Dispatch to requested and present channels
@@ -180,11 +179,11 @@ public class NotificationProcessingService {
 
     private void prepareAndSendSMSNotification(SmsRequest inboundSms, User user) {
         SmsContent smsContent = SmsContent.builder()
-                        .mobileNumber(user.getPhone())
-                        .templateName(inboundSms.getTemplateName())
-                        .placeholders(inboundSms.getPlaceholders())
-                        .message(inboundSms.getMessage())
-                        .build();
+                .mobileNumber(user.getPhone())
+                .templateName(inboundSms.getTemplateName())
+                .placeholders(inboundSms.getPlaceholders())
+                .message(inboundSms.getMessage())
+                .build();
 
         try {
             sendNotificationService.sendSmsRequest(smsContent, user);

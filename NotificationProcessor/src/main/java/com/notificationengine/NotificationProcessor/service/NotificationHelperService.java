@@ -9,7 +9,6 @@ import com.notificationengine.NotificationProcessor.models.dtos.content.EmailCon
 import com.notificationengine.NotificationProcessor.models.dtos.content.PushContent;
 import com.notificationengine.NotificationProcessor.models.dtos.content.SmsContent;
 import com.notificationengine.NotificationProcessor.models.dtos.content.WhatsappContent;
-import com.notificationengine.NotificationProcessor.repo.PreferenceRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.PreferenceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -24,20 +23,20 @@ import java.util.Arrays;
 @Slf4j
 public class NotificationHelperService {
 
-    private final PreferenceRepository preferenceRepository;
+    private final PreferenceCacheService preferenceCacheService;
     private final ObjectMapper objectMapper;
     private final int currentPriority;
 
-    public NotificationHelperService(PreferenceRepository preferenceRepository,
+    public NotificationHelperService(PreferenceCacheService preferenceCacheService,
                                      ObjectMapper objectMapper,
                                      @Value("${notification.processor.priority}") int currentPriority) {
-        this.preferenceRepository = preferenceRepository;
+        this.preferenceCacheService = preferenceCacheService;
         this.objectMapper = objectMapper;
         this.currentPriority = currentPriority;
     }
 
     public boolean isNotificationAllowed_PreferenceCheck(Long userId, Channel channel) {
-        Preference channelPreference = preferenceRepository.findByUserIdAndChannel(userId, channel)
+        Preference channelPreference = preferenceCacheService.findByUserIdAndChannel(userId, channel)
                 .orElseThrow(() -> {
                     log.error("{} preference not found for userId: {}", channel, userId);
                     return new PreferenceNotFoundException(channel + " preference not found for userId: " + userId);
