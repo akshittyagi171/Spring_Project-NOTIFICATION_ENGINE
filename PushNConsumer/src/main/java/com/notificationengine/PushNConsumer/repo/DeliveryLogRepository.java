@@ -2,8 +2,8 @@ package com.notificationengine.PushNConsumer.repo;
 
 
 import com.notificationengine.PushNConsumer.models.db.DeliveryLog;
-import com.notificationengine.PushNConsumer.models.enums.Channel;
-import com.notificationengine.PushNConsumer.models.enums.Status;
+import com.notificationengine.common.enums.Channel;
+import com.notificationengine.common.enums.Status;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

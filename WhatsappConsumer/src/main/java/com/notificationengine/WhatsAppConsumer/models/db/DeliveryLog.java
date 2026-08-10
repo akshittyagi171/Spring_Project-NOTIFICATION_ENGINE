@@ -1,7 +1,7 @@
 package com.notificationengine.WhatsAppConsumer.models.db;
 
-import com.notificationengine.WhatsAppConsumer.models.enums.Channel;
-import com.notificationengine.WhatsAppConsumer.models.enums.Status;
+import com.notificationengine.common.enums.Channel;
+import com.notificationengine.common.enums.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -2,8 +2,8 @@ package com.notificationengine.PushNConsumer.service;
 
 import com.notificationengine.PushNConsumer.models.db.DeliveryLog;
 import com.notificationengine.PushNConsumer.models.db.Notification;
-import com.notificationengine.PushNConsumer.models.enums.Channel;
-import com.notificationengine.PushNConsumer.models.enums.Status;
+import com.notificationengine.common.enums.Channel;
+import com.notificationengine.common.enums.Status;
 import com.notificationengine.PushNConsumer.repo.DeliveryLogRepository;
 import com.notificationengine.PushNConsumer.repo.NotificationRepository;
 import com.notificationengine.PushNConsumer.service.exceptions.NotificationNotFoundException;

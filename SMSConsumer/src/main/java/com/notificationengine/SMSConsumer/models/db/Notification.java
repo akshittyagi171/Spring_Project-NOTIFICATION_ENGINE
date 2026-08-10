@@ -1,7 +1,7 @@
 package com.notificationengine.SMSConsumer.models.db;
 
-import com.notificationengine.SMSConsumer.models.enums.Channel;
-import com.notificationengine.SMSConsumer.models.enums.Status;
+import com.notificationengine.common.enums.Channel;
+import com.notificationengine.common.enums.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

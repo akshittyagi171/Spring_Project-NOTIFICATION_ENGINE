@@ -1,8 +1,8 @@
 package com.notificationengine.SMSConsumer.repo;
 
 import com.notificationengine.SMSConsumer.models.db.Notification;
-import com.notificationengine.SMSConsumer.models.enums.Channel;
-import com.notificationengine.SMSConsumer.models.enums.Status;
+import com.notificationengine.common.enums.Channel;
+import com.notificationengine.common.enums.Status;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

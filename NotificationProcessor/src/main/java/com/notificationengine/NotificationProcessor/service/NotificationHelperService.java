@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notificationengine.NotificationProcessor.models.db.Preference;
-import com.notificationengine.NotificationProcessor.models.enums.Channel;
+import com.notificationengine.common.enums.Channel;
 import com.notificationengine.NotificationProcessor.service.exceptions.PreferenceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;

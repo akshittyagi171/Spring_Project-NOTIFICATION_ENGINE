@@ -1,7 +1,7 @@
 package com.notificationengine.PushNConsumer.models.db;
 
-import com.notificationengine.PushNConsumer.models.enums.Channel;
-import com.notificationengine.PushNConsumer.models.enums.Status;
+import com.notificationengine.common.enums.Channel;
+import com.notificationengine.common.enums.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -3,7 +3,7 @@ package com.notificationengine.NotificationProcessor.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notificationengine.NotificationProcessor.models.dtos.content.*;
 import com.notificationengine.NotificationProcessor.models.dtos.request.*;
-import com.notificationengine.NotificationProcessor.models.enums.Channel;
+import com.notificationengine.common.enums.Channel;
 import com.notificationengine.NotificationProcessor.models.db.Template;
 import com.notificationengine.NotificationProcessor.models.db.User;
 import com.notificationengine.NotificationProcessor.repo.TemplateRepository;

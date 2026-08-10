@@ -2,8 +2,8 @@ package com.notificationengine.WhatsAppConsumer.service;
 
 import com.notificationengine.WhatsAppConsumer.models.db.DeliveryLog;
 import com.notificationengine.WhatsAppConsumer.models.db.Notification;
-import com.notificationengine.WhatsAppConsumer.models.enums.Channel;
-import com.notificationengine.WhatsAppConsumer.models.enums.Status;
+import com.notificationengine.common.enums.Channel;
+import com.notificationengine.common.enums.Status;
 import com.notificationengine.WhatsAppConsumer.repo.DeliveryLogRepository;
 import com.notificationengine.WhatsAppConsumer.repo.NotificationRepository;
 import com.notificationengine.WhatsAppConsumer.service.exceptions.NotificationNotFoundException;

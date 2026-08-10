@@ -1,6 +1,6 @@
 package com.notificationengine.NotificationProcessor.models.db;
 
-import com.notificationengine.NotificationProcessor.models.enums.Channel;
+import com.notificationengine.common.enums.Channel;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

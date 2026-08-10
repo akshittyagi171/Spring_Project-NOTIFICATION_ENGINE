@@ -8,7 +8,7 @@ import com.notificationengine.notificationservice.models.dtos.UserCreateRequest;
 import com.notificationengine.notificationservice.models.dtos.UserCreateResponse;
 import com.notificationengine.notificationservice.models.dtos.request.RecipientRequest;
 import com.notificationengine.notificationservice.models.dtos.response.RecipientResponse;
-import com.notificationengine.notificationservice.models.enums.Channel;
+import com.notificationengine.common.enums.Channel;
 import com.notificationengine.notificationservice.repo.PreferenceRepository;
 import com.notificationengine.notificationservice.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Value;

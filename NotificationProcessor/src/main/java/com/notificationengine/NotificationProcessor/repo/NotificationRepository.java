@@ -1,8 +1,8 @@
 package com.notificationengine.NotificationProcessor.repo;
 
 import com.notificationengine.NotificationProcessor.models.db.Notification;
-import com.notificationengine.NotificationProcessor.models.enums.Channel;
-import com.notificationengine.NotificationProcessor.models.enums.Status;
+import com.notificationengine.common.enums.Channel;
+import com.notificationengine.common.enums.Status;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

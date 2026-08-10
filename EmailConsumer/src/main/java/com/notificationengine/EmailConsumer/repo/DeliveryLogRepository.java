@@ -2,8 +2,8 @@ package com.notificationengine.EmailConsumer.repo;
 
 
 import com.notificationengine.EmailConsumer.models.db.DeliveryLog;
-import com.notificationengine.EmailConsumer.models.enums.Channel;
-import com.notificationengine.EmailConsumer.models.enums.Status;
+import com.notificationengine.common.enums.Channel;
+import com.notificationengine.common.enums.Status;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
