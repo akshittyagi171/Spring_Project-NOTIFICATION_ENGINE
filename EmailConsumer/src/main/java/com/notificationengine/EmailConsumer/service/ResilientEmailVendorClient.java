@@ -1,7 +1,7 @@
 package com.notificationengine.EmailConsumer.service;
 
-import com.notificationengine.EmailConsumer.models.EmailContent;
-import com.notificationengine.EmailConsumer.models.SendEmailResponse;
+import com.notificationengine.common.dto.content.EmailContent;
+import com.notificationengine.common.dto.response.SendEmailResponse;
 import com.notificationengine.EmailConsumer.service.exceptions.FatalVendorException;
 import com.notificationengine.EmailConsumer.service.exceptions.RetryableVendorException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;

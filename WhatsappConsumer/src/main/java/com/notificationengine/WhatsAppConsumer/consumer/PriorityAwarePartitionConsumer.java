@@ -1,9 +1,9 @@
 package com.notificationengine.WhatsAppConsumer.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.WhatsAppConsumer.models.WhatsAppContent;
 import com.notificationengine.WhatsAppConsumer.service.WhatsAppProcessingService;
 import com.notificationengine.WhatsAppConsumer.service.exceptions.FatalVendorException;
+import com.notificationengine.common.dto.content.WhatsAppContent;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

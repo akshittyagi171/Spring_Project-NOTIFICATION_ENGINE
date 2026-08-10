@@ -1,4 +1,4 @@
-package com.notificationengine.NotificationProcessor.models.dtos.request;
+package com.notificationengine.common.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

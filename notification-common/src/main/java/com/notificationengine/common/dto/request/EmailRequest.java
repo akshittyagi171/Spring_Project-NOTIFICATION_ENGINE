@@ -1,4 +1,4 @@
-package com.notificationengine.NotificationProcessor.models.dtos.content;
+package com.notificationengine.common.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,9 +12,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmailContent {
-    private Long notificationId;
-    private String emailId;
+public class EmailRequest {
     private String templateName;
     private Map<String, String> placeholders;
     private String message;

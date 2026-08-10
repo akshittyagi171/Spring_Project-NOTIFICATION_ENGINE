@@ -1,7 +1,7 @@
 package com.notificationengine.PushNConsumer.service;
 
-import com.notificationengine.PushNConsumer.models.SendPushNResponse;
-import com.notificationengine.PushNConsumer.models.PushContent;
+import com.notificationengine.common.dto.content.PushContent;
+import com.notificationengine.common.dto.response.SendPushNResponse;
 import com.notificationengine.PushNConsumer.service.exceptions.FatalVendorException;
 import com.notificationengine.PushNConsumer.service.exceptions.RetryableVendorException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;

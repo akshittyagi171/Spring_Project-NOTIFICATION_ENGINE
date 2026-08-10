@@ -1,7 +1,7 @@
 package com.notificationengine.SMSConsumer.service;
 
-import com.notificationengine.SMSConsumer.models.SendSmsResponse;
-import com.notificationengine.SMSConsumer.models.SmsContent;
+import com.notificationengine.common.dto.content.SmsContent;
+import com.notificationengine.common.dto.response.SendSmsResponse;
 import com.notificationengine.SMSConsumer.service.exceptions.FatalVendorException;
 import com.notificationengine.SMSConsumer.service.exceptions.RetryableVendorException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;

@@ -1,9 +1,9 @@
 package com.notificationengine.PushNConsumer.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.PushNConsumer.models.PushContent;
 import com.notificationengine.PushNConsumer.service.PushNProcessingService;
 import com.notificationengine.PushNConsumer.service.exceptions.FatalVendorException;
+import com.notificationengine.common.dto.content.PushContent;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

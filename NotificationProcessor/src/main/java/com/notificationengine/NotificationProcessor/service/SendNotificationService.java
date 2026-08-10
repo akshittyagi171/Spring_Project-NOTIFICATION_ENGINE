@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notificationengine.common.enums.Channel;
 import com.notificationengine.common.enums.Status;
-import com.notificationengine.NotificationProcessor.models.dtos.content.EmailContent;
-import com.notificationengine.NotificationProcessor.models.dtos.content.PushContent;
-import com.notificationengine.NotificationProcessor.models.dtos.content.SmsContent;
-import com.notificationengine.NotificationProcessor.models.dtos.content.WhatsappContent;
+import com.notificationengine.common.dto.content.EmailContent;
+import com.notificationengine.common.dto.content.PushContent;
+import com.notificationengine.common.dto.content.SmsContent;
+import com.notificationengine.common.dto.content.WhatsAppContent;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
 import com.notificationengine.common.model.Notification;
 import com.notificationengine.common.model.User;
@@ -155,7 +155,7 @@ public class SendNotificationService {
         }
     }
 
-    public void sendWhatsAppRequest(WhatsappContent whatsAppContent, User user, String idempotencyKey) {
+    public void sendWhatsAppRequest(WhatsAppContent whatsAppContent, User user, String idempotencyKey) {
         Notification notification = null;
         try {
             notification = notificationRepository.save(new Notification(user, Channel.whatsapp, whatsAppContent.getMessage(), objectMapper.writeValueAsString(whatsAppContent), notificationHelperService.getNotificationHash(idempotencyKey, user.getId(), Channel.whatsapp)));

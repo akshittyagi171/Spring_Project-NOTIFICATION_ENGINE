@@ -1,4 +1,4 @@
-package com.notificationengine.SMSConsumer.models;
+package com.notificationengine.common.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,9 +11,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SmsContent {
-    private Long notificationId;
-    private String mobileNumber;
+public class SmsRequest {
     private String templateName;
     private Map<String, String> placeholders;
     private String message;

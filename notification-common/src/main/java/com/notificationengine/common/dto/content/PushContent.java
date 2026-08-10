@@ -1,4 +1,4 @@
-package com.notificationengine.NotificationProcessor.models.dtos.request;
+package com.notificationengine.common.dto.content;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,9 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PushRequest {
+public class PushContent {
+    private Long notificationId;
+    private String fcmToken;
     private String templateName;
     private Map<String, String> placeholders;
     private String message;

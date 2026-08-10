@@ -1,7 +1,7 @@
 package com.notificationengine.WhatsAppConsumer.service;
 
-import com.notificationengine.WhatsAppConsumer.models.SendWhatsAppResponse;
-import com.notificationengine.WhatsAppConsumer.models.WhatsAppContent;
+import com.notificationengine.common.dto.content.WhatsAppContent;
+import com.notificationengine.common.dto.response.SendWhatsAppResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

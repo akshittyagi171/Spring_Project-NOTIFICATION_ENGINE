@@ -1,4 +1,4 @@
-package com.notificationengine.EmailConsumer.models;
+package com.notificationengine.common.dto.content;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +17,7 @@ public class EmailContent {
     private String emailId;
     private String templateName;
     private Map<String, String> placeholders;
-    private String message; // This will now contain the full HTML string
+    private String message;
     private String subject;
     private List<EmailAttachment> attachments;
 

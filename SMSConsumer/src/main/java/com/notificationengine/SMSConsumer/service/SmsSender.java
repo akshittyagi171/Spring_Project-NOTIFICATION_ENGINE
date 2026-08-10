@@ -1,8 +1,8 @@
 package com.notificationengine.SMSConsumer.service;
 
 import com.notificationengine.SMSConsumer.config.TwilioConfig;
-import com.notificationengine.SMSConsumer.models.SendSmsResponse;
-import com.notificationengine.SMSConsumer.models.SmsContent;
+import com.notificationengine.common.dto.content.SmsContent;
+import com.notificationengine.common.dto.response.SendSmsResponse;
 import com.twilio.exception.ApiException;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;

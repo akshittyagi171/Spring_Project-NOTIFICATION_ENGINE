@@ -1,7 +1,7 @@
 package com.notificationengine.PushNConsumer.service;
 
-import com.notificationengine.PushNConsumer.models.SendPushNResponse;
-import com.notificationengine.PushNConsumer.models.PushContent;
+import com.notificationengine.common.dto.content.PushContent;
+import com.notificationengine.common.dto.response.SendPushNResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

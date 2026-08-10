@@ -1,7 +1,7 @@
 package com.notificationengine.SMSConsumer.service;
 
-import com.notificationengine.SMSConsumer.models.SendSmsResponse;
-import com.notificationengine.SMSConsumer.models.SmsContent;
+import com.notificationengine.common.dto.content.SmsContent;
+import com.notificationengine.common.dto.response.SendSmsResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

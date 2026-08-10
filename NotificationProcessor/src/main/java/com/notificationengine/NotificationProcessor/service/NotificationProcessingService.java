@@ -1,8 +1,11 @@
 package com.notificationengine.NotificationProcessor.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.NotificationProcessor.models.dtos.content.*;
-import com.notificationengine.NotificationProcessor.models.dtos.request.*;
+import com.notificationengine.common.dto.content.EmailContent;
+import com.notificationengine.common.dto.content.PushContent;
+import com.notificationengine.common.dto.content.SmsContent;
+import com.notificationengine.common.dto.content.WhatsAppContent;
+import com.notificationengine.common.dto.request.*;
 import com.notificationengine.common.enums.Channel;
 import com.notificationengine.common.repo.TemplateRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
@@ -136,7 +139,7 @@ public class NotificationProcessingService {
     }
 
     private void prepareAndSendWhatsAppNotification(WhatsappRequest inboundWhatsapp, User user, String idempotencyKey) {
-        WhatsappContent whatsAppContent = WhatsappContent.builder()
+        WhatsAppContent whatsAppContent = WhatsAppContent.builder()
                 .mobileNumber(user.getPhone())
                 .templateName(inboundWhatsapp.getTemplateName())
                 .placeholders(inboundWhatsapp.getPlaceholders())
@@ -202,11 +205,11 @@ public class NotificationProcessingService {
                 .toList();
     }
 
-    private List<WhatsappContent.WhatsappAttachment> mapWhatsappAttachments(
+    private List<WhatsAppContent.WhatsappAttachment> mapWhatsappAttachments(
             List<WhatsappRequest.WhatsappAttachment> inbound) {
         if (inbound == null) return null;
         return inbound.stream()
-                .map(a -> new WhatsappContent.WhatsappAttachment(
+                .map(a -> new WhatsAppContent.WhatsappAttachment(
                         a.getType(), a.getUrl(), a.getCaption()))
                 .toList();
     }

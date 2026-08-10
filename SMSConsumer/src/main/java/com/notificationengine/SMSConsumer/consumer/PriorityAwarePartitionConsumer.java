@@ -1,9 +1,9 @@
 package com.notificationengine.SMSConsumer.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.SMSConsumer.models.SmsContent;
 import com.notificationengine.SMSConsumer.service.SmsProcessingService;
 import com.notificationengine.SMSConsumer.service.exceptions.FatalVendorException;
+import com.notificationengine.common.dto.content.SmsContent;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

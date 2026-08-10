@@ -1,4 +1,4 @@
-package com.notificationengine.NotificationProcessor.models.dtos.content;
+package com.notificationengine.common.dto.content;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Content {
     private EmailContent email;
-    private WhatsappContent whatsapp;
+    private WhatsAppContent whatsapp;
     private PushContent push;
     private SmsContent sms;
 }

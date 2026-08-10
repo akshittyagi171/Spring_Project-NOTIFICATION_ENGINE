@@ -1,4 +1,4 @@
-package com.notificationengine.NotificationProcessor.models.dtos.content;
+package com.notificationengine.common.dto.content;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

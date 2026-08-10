@@ -2,7 +2,7 @@ package com.notificationengine.NotificationProcessor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.NotificationProcessor.models.dtos.request.NotificationRequest;
+import com.notificationengine.common.dto.request.NotificationRequest;
 import com.notificationengine.NotificationProcessor.service.NotificationProcessingService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

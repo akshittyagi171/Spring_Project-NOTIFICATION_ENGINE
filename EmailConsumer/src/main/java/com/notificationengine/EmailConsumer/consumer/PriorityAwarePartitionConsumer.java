@@ -1,9 +1,9 @@
 package com.notificationengine.EmailConsumer.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.EmailConsumer.models.EmailContent;
 import com.notificationengine.EmailConsumer.service.EmailProcessingService;
 import com.notificationengine.EmailConsumer.service.exceptions.FatalVendorException;
+import com.notificationengine.common.dto.content.EmailContent;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

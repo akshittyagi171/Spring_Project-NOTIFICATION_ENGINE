@@ -1,8 +1,8 @@
 package com.notificationengine.WhatsAppConsumer.service;
 
 import com.notificationengine.WhatsAppConsumer.config.TwilioConfig;
-import com.notificationengine.WhatsAppConsumer.models.SendWhatsAppResponse;
-import com.notificationengine.WhatsAppConsumer.models.WhatsAppContent;
+import com.notificationengine.common.dto.content.WhatsAppContent;
+import com.notificationengine.common.dto.response.SendWhatsAppResponse;
 import com.twilio.exception.ApiException;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
