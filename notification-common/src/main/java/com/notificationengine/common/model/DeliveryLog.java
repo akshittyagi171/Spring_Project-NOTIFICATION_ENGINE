@@ -1,4 +1,4 @@
-package com.notificationengine.EmailConsumer.models.db;
+package com.notificationengine.common.model;
 
 import com.notificationengine.common.enums.Channel;
 import com.notificationengine.common.enums.Status;
@@ -42,4 +42,5 @@ public class DeliveryLog {
         this.errorMessage = errorMessage;
     }
 }
+
 

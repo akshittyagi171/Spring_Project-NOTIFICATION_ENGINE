@@ -1,12 +1,12 @@
 package com.notificationengine.PushNConsumer.service;
 
-import com.notificationengine.PushNConsumer.models.db.DeliveryLog;
-import com.notificationengine.PushNConsumer.models.db.Notification;
 import com.notificationengine.common.enums.Channel;
 import com.notificationengine.common.enums.Status;
-import com.notificationengine.PushNConsumer.repo.DeliveryLogRepository;
-import com.notificationengine.PushNConsumer.repo.NotificationRepository;
 import com.notificationengine.PushNConsumer.service.exceptions.NotificationNotFoundException;
+import com.notificationengine.common.model.DeliveryLog;
+import com.notificationengine.common.model.Notification;
+import com.notificationengine.common.repo.DeliveryLogRepository;
+import com.notificationengine.common.repo.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

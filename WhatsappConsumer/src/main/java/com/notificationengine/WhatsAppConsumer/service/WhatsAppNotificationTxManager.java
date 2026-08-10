@@ -1,12 +1,12 @@
 package com.notificationengine.WhatsAppConsumer.service;
 
-import com.notificationengine.WhatsAppConsumer.models.db.DeliveryLog;
-import com.notificationengine.WhatsAppConsumer.models.db.Notification;
 import com.notificationengine.common.enums.Channel;
 import com.notificationengine.common.enums.Status;
-import com.notificationengine.WhatsAppConsumer.repo.DeliveryLogRepository;
-import com.notificationengine.WhatsAppConsumer.repo.NotificationRepository;
 import com.notificationengine.WhatsAppConsumer.service.exceptions.NotificationNotFoundException;
+import com.notificationengine.common.model.DeliveryLog;
+import com.notificationengine.common.model.Notification;
+import com.notificationengine.common.repo.DeliveryLogRepository;
+import com.notificationengine.common.repo.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

@@ -1,16 +1,16 @@
 package com.notificationengine.notificationservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.notificationservice.models.db.Preference;
-import com.notificationengine.notificationservice.models.db.User;
+import com.notificationengine.common.model.Preference;
+import com.notificationengine.common.model.User;
+import com.notificationengine.common.repo.PreferenceRepository;
+import com.notificationengine.common.repo.UserRepository;
 import com.notificationengine.notificationservice.models.dtos.PreferenceUpdateRequest;
 import com.notificationengine.notificationservice.models.dtos.UserCreateRequest;
 import com.notificationengine.notificationservice.models.dtos.UserCreateResponse;
 import com.notificationengine.notificationservice.models.dtos.request.RecipientRequest;
 import com.notificationengine.notificationservice.models.dtos.response.RecipientResponse;
 import com.notificationengine.common.enums.Channel;
-import com.notificationengine.notificationservice.repo.PreferenceRepository;
-import com.notificationengine.notificationservice.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;

@@ -1,8 +1,8 @@
 package com.notificationengine.NotificationProcessor.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.NotificationProcessor.models.db.User;
-import com.notificationengine.NotificationProcessor.repo.UserRepository;
+import com.notificationengine.common.repo.UserRepository;
+import com.notificationengine.common.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;

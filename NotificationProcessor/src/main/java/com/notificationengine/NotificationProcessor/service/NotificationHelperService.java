@@ -3,7 +3,7 @@ package com.notificationengine.NotificationProcessor.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.NotificationProcessor.models.db.Preference;
+import com.notificationengine.common.model.Preference;
 import com.notificationengine.common.enums.Channel;
 import com.notificationengine.NotificationProcessor.service.exceptions.PreferenceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 @Service
 @Slf4j

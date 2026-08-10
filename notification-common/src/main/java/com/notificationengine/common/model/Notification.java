@@ -1,4 +1,4 @@
-package com.notificationengine.SMSConsumer.models.db;
+package com.notificationengine.common.model;
 
 import com.notificationengine.common.enums.Channel;
 import com.notificationengine.common.enums.Status;
@@ -35,7 +35,7 @@ public class Notification {
     @Column(name = "request_content", columnDefinition = "JSON")
     private String requestContent;
 
-    @Column(length = 128, unique = true)
+    @Column(name = "notification_hash", length = 128)
     private String notificationHash;
 
     @Column(name = "created_at", updatable = false)

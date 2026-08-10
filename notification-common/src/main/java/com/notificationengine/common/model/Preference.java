@@ -1,4 +1,4 @@
-package com.notificationengine.NotificationProcessor.models.db;
+package com.notificationengine.common.model;
 
 import com.notificationengine.common.enums.Channel;
 import jakarta.persistence.*;

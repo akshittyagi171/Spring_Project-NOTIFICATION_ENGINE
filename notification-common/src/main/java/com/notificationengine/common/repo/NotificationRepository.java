@@ -1,6 +1,6 @@
-package com.notificationengine.WhatsAppConsumer.repo;
+package com.notificationengine.common.repo;
 
-import com.notificationengine.WhatsAppConsumer.models.db.Notification;
+import com.notificationengine.common.model.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

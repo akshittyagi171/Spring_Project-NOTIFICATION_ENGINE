@@ -1,26 +1,30 @@
-package com.notificationengine.PushNConsumer.models.db;
+package com.notificationengine.common.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "templates")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Template {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
-    private String email;
-    private String phone;
-    private String fcmToken;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    @Column(columnDefinition = "JSON")
+    private String placeholders;
+
+    @Column(name = "template_priority")
+    private int templatePriority;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -28,3 +32,6 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 }
+
+
+

@@ -1,11 +1,10 @@
 package com.notificationengine.notificationservice.service;
 
-
-import com.notificationengine.notificationservice.models.db.Template;
+import com.notificationengine.common.model.Template;
+import com.notificationengine.common.repo.TemplateRepository;
 import com.notificationengine.notificationservice.models.dtos.request.ContentRequest;
 import com.notificationengine.notificationservice.models.dtos.request.NotificationRequest;
 import com.notificationengine.notificationservice.models.dtos.request.RecipientRequest;
-import com.notificationengine.notificationservice.repo.TemplateRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;

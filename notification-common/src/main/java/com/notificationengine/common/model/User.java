@@ -1,4 +1,4 @@
-package com.notificationengine.SMSConsumer.models.db;
+package com.notificationengine.common.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

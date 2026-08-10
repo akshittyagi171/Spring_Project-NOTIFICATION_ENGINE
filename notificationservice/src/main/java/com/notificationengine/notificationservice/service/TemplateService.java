@@ -1,8 +1,8 @@
 package com.notificationengine.notificationservice.service;
 
-import com.notificationengine.notificationservice.models.db.Template;
+import com.notificationengine.common.model.Template;
+import com.notificationengine.common.repo.TemplateRepository;
 import com.notificationengine.notificationservice.models.dtos.TemplateRequest;
-import com.notificationengine.notificationservice.repo.TemplateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

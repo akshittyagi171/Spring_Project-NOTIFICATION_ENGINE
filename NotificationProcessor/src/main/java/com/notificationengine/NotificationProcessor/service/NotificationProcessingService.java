@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notificationengine.NotificationProcessor.models.dtos.content.*;
 import com.notificationengine.NotificationProcessor.models.dtos.request.*;
 import com.notificationengine.common.enums.Channel;
-import com.notificationengine.NotificationProcessor.models.db.Template;
-import com.notificationengine.NotificationProcessor.models.db.User;
-import com.notificationengine.NotificationProcessor.repo.TemplateRepository;
+import com.notificationengine.common.repo.TemplateRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
 import com.notificationengine.NotificationProcessor.service.exceptions.PlaceholderNotFoundInRequestException;
 import com.notificationengine.NotificationProcessor.service.exceptions.TemplateNotFoundException;
+import com.notificationengine.common.model.Template;
+import com.notificationengine.common.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

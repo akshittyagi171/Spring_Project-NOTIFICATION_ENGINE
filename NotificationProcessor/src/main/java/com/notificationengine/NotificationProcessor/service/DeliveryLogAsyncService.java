@@ -1,10 +1,10 @@
 package com.notificationengine.NotificationProcessor.service;
 
-import com.notificationengine.NotificationProcessor.models.db.DeliveryLog;
-import com.notificationengine.NotificationProcessor.models.db.Notification;
+import com.notificationengine.common.model.DeliveryLog;
+import com.notificationengine.common.model.Notification;
 import com.notificationengine.common.enums.Channel;
 import com.notificationengine.common.enums.Status;
-import com.notificationengine.NotificationProcessor.repo.DeliveryLogRepository;
+import com.notificationengine.common.repo.DeliveryLogRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,6 @@
-package com.notificationengine.notificationservice.repo;
+package com.notificationengine.common.repo;
 
-import com.notificationengine.notificationservice.models.db.Template;
+import com.notificationengine.common.model.Template;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
