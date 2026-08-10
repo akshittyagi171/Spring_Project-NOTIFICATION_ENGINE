@@ -1,10 +1,10 @@
-package com.notificationengine.SMSConsumer;
+package com.notificationengine.WhatsAppConsumer;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SmsConsumerApplicationTests {
+class WhatsAppConsumerApplicationTests {
 
 	@Test
 	void contextLoads() {
