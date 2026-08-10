@@ -1,4 +1,4 @@
-package com.notificationengine.notificationservice.models.dtos;
+package com.notificationengine.notificationservice.models.dtos.request;
 
 import com.notificationengine.common.enums.Channel;
 import lombok.Data;

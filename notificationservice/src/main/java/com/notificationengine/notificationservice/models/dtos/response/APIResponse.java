@@ -1,4 +1,4 @@
-package com.notificationengine.notificationservice.models.dtos;
+package com.notificationengine.notificationservice.models.dtos.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;

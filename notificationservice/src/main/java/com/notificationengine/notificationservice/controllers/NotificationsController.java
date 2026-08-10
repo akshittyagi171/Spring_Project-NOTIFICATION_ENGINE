@@ -1,6 +1,6 @@
 package com.notificationengine.notificationservice.controllers;
 
-import com.notificationengine.notificationservice.models.dtos.APIResponse;
+import com.notificationengine.notificationservice.models.dtos.response.APIResponse;
 import com.notificationengine.notificationservice.models.dtos.request.NotificationRequest;
 import com.notificationengine.notificationservice.models.dtos.response.NotificationResponse;
 import com.notificationengine.notificationservice.models.dtos.response.RecipientResponse;

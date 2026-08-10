@@ -15,8 +15,5 @@ public class NotificationResponse {
     private String status;
     private String message;
     private List<RecipientResponse> processedRecipients;
-
-    // You can return the full ContentRequest object here,
-    // or create a simplified summary object depending on how much data you want to echo.
     private ContentRequest contentSent;
 }
