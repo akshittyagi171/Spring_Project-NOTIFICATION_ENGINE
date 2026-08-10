@@ -1,8 +1,8 @@
 package com.notificationengine.notificationservice.controllers;
 
 import com.notificationengine.common.model.Template;
-import com.notificationengine.notificationservice.models.dtos.response.APIResponse;
-import com.notificationengine.notificationservice.models.dtos.request.TemplateRequest;
+import com.notificationengine.notificationservice.dto.response.APIResponse;
+import com.notificationengine.notificationservice.dto.request.TemplateRequest;
 import com.notificationengine.notificationservice.service.TemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

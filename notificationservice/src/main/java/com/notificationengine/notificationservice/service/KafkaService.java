@@ -2,8 +2,8 @@ package com.notificationengine.notificationservice.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.notificationengine.notificationservice.models.dtos.request.NotificationRequest;
-import com.notificationengine.notificationservice.models.dtos.request.RecipientRequest;
+import com.notificationengine.notificationservice.dto.request.NotificationRequest;
+import com.notificationengine.notificationservice.dto.request.RecipientRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;

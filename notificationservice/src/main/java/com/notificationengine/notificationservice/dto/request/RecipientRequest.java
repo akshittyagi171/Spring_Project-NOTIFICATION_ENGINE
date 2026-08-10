@@ -1,4 +1,4 @@
-package com.notificationengine.notificationservice.models.dtos.response;
+package com.notificationengine.notificationservice.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RecipientResponse {
+public class RecipientRequest {
     private String userId;
-    private boolean isNewUser;
     private String name;
     private String email;
     private String phone;
+    private String fcmToken;
 }

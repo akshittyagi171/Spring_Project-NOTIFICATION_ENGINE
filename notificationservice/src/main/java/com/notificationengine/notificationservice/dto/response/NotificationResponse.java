@@ -1,6 +1,6 @@
-package com.notificationengine.notificationservice.models.dtos.response;
+package com.notificationengine.notificationservice.dto.response;
 
-import com.notificationengine.notificationservice.models.dtos.request.ContentRequest;
+import com.notificationengine.notificationservice.dto.request.ContentRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

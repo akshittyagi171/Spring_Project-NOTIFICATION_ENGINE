@@ -1,9 +1,9 @@
 package com.notificationengine.notificationservice.controllers;
 
-import com.notificationengine.notificationservice.models.dtos.response.APIResponse;
-import com.notificationengine.notificationservice.models.dtos.request.NotificationRequest;
-import com.notificationengine.notificationservice.models.dtos.response.NotificationResponse;
-import com.notificationengine.notificationservice.models.dtos.response.RecipientResponse;
+import com.notificationengine.notificationservice.dto.response.APIResponse;
+import com.notificationengine.notificationservice.dto.request.NotificationRequest;
+import com.notificationengine.notificationservice.dto.response.NotificationResponse;
+import com.notificationengine.notificationservice.dto.response.RecipientResponse;
 import com.notificationengine.notificationservice.service.KafkaService;
 import com.notificationengine.notificationservice.service.NotificationProcessingService;
 import com.notificationengine.notificationservice.service.UserService;

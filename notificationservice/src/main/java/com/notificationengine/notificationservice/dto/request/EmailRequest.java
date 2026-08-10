@@ -1,4 +1,4 @@
-package com.notificationengine.notificationservice.models.dtos.request;
+package com.notificationengine.notificationservice.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,19 +11,20 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WhatsappRequest {
+public class EmailRequest {
     private String templateName;
     private Map<String, String> placeholders;
     private String message;
-    private List<WhatsappAttachment> attachments;
+    private String subject;
+    private List<EmailAttachment> attachments;
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class WhatsappAttachment {
+    public static class EmailAttachment {
         private String type;
         private String url;
-        private String caption;
+        private String filename;
     }
 }

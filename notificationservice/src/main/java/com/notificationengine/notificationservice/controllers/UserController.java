@@ -1,9 +1,9 @@
 package com.notificationengine.notificationservice.controllers;
 
-import com.notificationengine.notificationservice.models.dtos.response.APIResponse;
-import com.notificationengine.notificationservice.models.dtos.request.PreferenceUpdateRequest;
-import com.notificationengine.notificationservice.models.dtos.request.UserCreateRequest;
-import com.notificationengine.notificationservice.models.dtos.request.UserCreateResponse;
+import com.notificationengine.notificationservice.dto.response.APIResponse;
+import com.notificationengine.notificationservice.dto.request.PreferenceUpdateRequest;
+import com.notificationengine.notificationservice.dto.request.UserCreateRequest;
+import com.notificationengine.notificationservice.dto.request.UserCreateResponse;
 import com.notificationengine.notificationservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
