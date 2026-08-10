@@ -2,8 +2,8 @@ package com.notificationengine.WhatsAppConsumer.service;
 
 import com.notificationengine.common.dto.content.WhatsAppContent;
 import com.notificationengine.common.dto.response.SendWhatsAppResponse;
-import com.notificationengine.WhatsAppConsumer.service.exceptions.FatalVendorException;
-import com.notificationengine.WhatsAppConsumer.service.exceptions.RetryableVendorException;
+import com.notificationengine.common.exception.FatalVendorException;
+import com.notificationengine.common.exception.RetryableVendorException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.micrometer.core.instrument.MeterRegistry;

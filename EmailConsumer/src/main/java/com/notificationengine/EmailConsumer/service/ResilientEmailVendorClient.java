@@ -2,8 +2,8 @@ package com.notificationengine.EmailConsumer.service;
 
 import com.notificationengine.common.dto.content.EmailContent;
 import com.notificationengine.common.dto.response.SendEmailResponse;
-import com.notificationengine.EmailConsumer.service.exceptions.FatalVendorException;
-import com.notificationengine.EmailConsumer.service.exceptions.RetryableVendorException;
+import com.notificationengine.common.exception.FatalVendorException;
+import com.notificationengine.common.exception.RetryableVendorException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.micrometer.core.instrument.MeterRegistry;

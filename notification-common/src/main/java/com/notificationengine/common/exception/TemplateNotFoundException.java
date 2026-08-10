@@ -1,4 +1,4 @@
-package com.notificationengine.NotificationProcessor.service.exceptions;
+package com.notificationengine.common.exception;
 
 public class TemplateNotFoundException extends RuntimeException {
     public TemplateNotFoundException(String message) {

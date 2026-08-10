@@ -10,7 +10,7 @@ import com.notificationengine.common.enums.Channel;
 import com.notificationengine.common.repo.TemplateRepository;
 import com.notificationengine.NotificationProcessor.service.exceptions.DuplicateNotificationFoundException;
 import com.notificationengine.NotificationProcessor.service.exceptions.PlaceholderNotFoundInRequestException;
-import com.notificationengine.NotificationProcessor.service.exceptions.TemplateNotFoundException;
+import com.notificationengine.common.exception.TemplateNotFoundException;
 import com.notificationengine.common.model.Template;
 import com.notificationengine.common.model.User;
 import lombok.extern.slf4j.Slf4j;

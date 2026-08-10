@@ -2,7 +2,7 @@ package com.notificationengine.SMSConsumer.service;
 
 import com.notificationengine.common.enums.Channel;
 import com.notificationengine.common.enums.Status;
-import com.notificationengine.SMSConsumer.service.exceptions.NotificationNotFoundException;
+import com.notificationengine.common.exception.NotificationNotFoundException;
 import com.notificationengine.common.model.DeliveryLog;
 import com.notificationengine.common.model.Notification;
 import com.notificationengine.common.repo.DeliveryLogRepository;

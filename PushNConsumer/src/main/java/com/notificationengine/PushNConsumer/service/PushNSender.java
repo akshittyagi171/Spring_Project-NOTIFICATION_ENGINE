@@ -4,7 +4,7 @@ import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.MessagingErrorCode;
 import com.notificationengine.common.dto.content.PushContent;
 import com.notificationengine.common.dto.response.SendPushNResponse;
-import com.notificationengine.PushNConsumer.service.exceptions.RetryableVendorException;
+import com.notificationengine.common.exception.RetryableVendorException;
 import com.notificationengine.common.repo.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
