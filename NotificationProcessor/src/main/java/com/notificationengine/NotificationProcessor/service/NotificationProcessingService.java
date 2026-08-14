@@ -39,13 +39,12 @@ public class NotificationProcessingService {
 
     public void processNotification(NotificationRequest notificationRequest) {
         ContentRequest contentRequest = notificationRequest.getContent();
+        String priority = String.valueOf(notificationRequest.getNotificationPriority());
 
-        // 1. Resolve templates for each channel independently before looping users
         resolveTemplatesForChannels(contentRequest);
 
         List<Channel> channels = getChannels(notificationRequest.getChannels());
 
-        // 2. Loop through all recipients in the batch
         for (RecipientRequest recipient : notificationRequest.getRecipients()) {
             if (recipient.getUserId() == null || recipient.getUserId().isBlank()) {
                 log.warn("Skipping recipient with no valid userId.");
@@ -58,18 +57,17 @@ public class NotificationProcessingService {
                 User user = userCacheService.findById(userId)
                         .orElseThrow(() -> new UserPrincipalNotFoundException("User with userId: " + userId + " Not found"));
 
-                // 3. Dispatch to requested and present channels
                 if (channels.contains(Channel.email) && contentRequest.getEmail() != null) {
-                    safeExecute(() -> prepareAndSendEmailNotification(contentRequest.getEmail(), user, idempotencyKey), "Email");
+                    safeExecute(() -> prepareAndSendEmailNotification(contentRequest.getEmail(), user, idempotencyKey, priority), "Email");
                 }
                 if (channels.contains(Channel.sms) && contentRequest.getSms() != null) {
-                    safeExecute(() -> prepareAndSendSMSNotification(contentRequest.getSms(), user, idempotencyKey), "SMS");
+                    safeExecute(() -> prepareAndSendSMSNotification(contentRequest.getSms(), user, idempotencyKey, priority), "SMS");
                 }
                 if (channels.contains(Channel.whatsapp) && contentRequest.getWhatsapp() != null) {
-                    safeExecute(() -> prepareAndSendWhatsAppNotification(contentRequest.getWhatsapp(), user, idempotencyKey), "WhatsApp");
+                    safeExecute(() -> prepareAndSendWhatsAppNotification(contentRequest.getWhatsapp(), user, idempotencyKey, priority), "WhatsApp");
                 }
                 if (channels.contains(Channel.push) && contentRequest.getPush() != null) {
-                    safeExecute(() -> prepareAndSendPushNotification(contentRequest.getPush(), user, idempotencyKey), "Push");
+                    safeExecute(() -> prepareAndSendPushNotification(contentRequest.getPush(), user, idempotencyKey, priority), "Push");
                 }
 
             } catch (UserPrincipalNotFoundException e) {
@@ -103,7 +101,7 @@ public class NotificationProcessingService {
 
         } catch (Exception e) {
             log.error("Failed to resolve template: {}", templateName, e);
-            return ""; // Fallback or throw based on your business requirement
+            return "";
         }
     }
 
@@ -119,9 +117,7 @@ public class NotificationProcessingService {
         return content;
     }
 
-    // --- Dispatchers mapped to new Content Objects ---
-
-    private void prepareAndSendEmailNotification(EmailRequest inboundEmail, User user, String idempotencyKey) {
+    private void prepareAndSendEmailNotification(EmailRequest inboundEmail, User user, String idempotencyKey, String priority) {
         EmailContent emailContent = EmailContent.builder()
                 .emailId(user.getEmail())
                 .templateName(inboundEmail.getTemplateName())
@@ -132,13 +128,13 @@ public class NotificationProcessingService {
                 .build();
 
         try {
-            sendNotificationService.sendEmailRequest(emailContent, user, idempotencyKey);
+            sendNotificationService.sendEmailRequest(emailContent, user, idempotencyKey, priority);
         } catch (DuplicateNotificationFoundException e) {
             log.error("Duplicate Email Request: {}", e.getMessage());
         }
     }
 
-    private void prepareAndSendWhatsAppNotification(WhatsappRequest inboundWhatsapp, User user, String idempotencyKey) {
+    private void prepareAndSendWhatsAppNotification(WhatsappRequest inboundWhatsapp, User user, String idempotencyKey, String priority) {
         WhatsAppContent whatsAppContent = WhatsAppContent.builder()
                 .mobileNumber(user.getPhone())
                 .templateName(inboundWhatsapp.getTemplateName())
@@ -148,14 +144,13 @@ public class NotificationProcessingService {
                 .build();
 
         try {
-            sendNotificationService.sendWhatsAppRequest(whatsAppContent, user, idempotencyKey);
+            sendNotificationService.sendWhatsAppRequest(whatsAppContent, user, idempotencyKey, priority);
         } catch (DuplicateNotificationFoundException e) {
             log.error("Duplicate WhatsApp Request: {}", e.getMessage());
         }
     }
 
-    private void prepareAndSendPushNotification(PushRequest inboundPush, User user, String idempotencyKey) {
-        // Mapping Push Action explicitly to decouple the nested action object
+    private void prepareAndSendPushNotification(PushRequest inboundPush, User user, String idempotencyKey, String priority) {
         PushContent.PushAction mappedAction = null;
         if (inboundPush.getAction() != null) {
             mappedAction = new PushContent.PushAction(
@@ -175,13 +170,13 @@ public class NotificationProcessingService {
                 .build();
 
         try {
-            sendNotificationService.sendPushNRequest(pushNContent, user, idempotencyKey);
+            sendNotificationService.sendPushNRequest(pushNContent, user, idempotencyKey, priority);
         } catch (DuplicateNotificationFoundException e) {
             log.error("Duplicate Push Request: {}", e.getMessage());
         }
     }
 
-    private void prepareAndSendSMSNotification(SmsRequest inboundSms, User user, String idempotencyKey) {
+    private void prepareAndSendSMSNotification(SmsRequest inboundSms, User user, String idempotencyKey, String priority) {
         SmsContent smsContent = SmsContent.builder()
                 .mobileNumber(user.getPhone())
                 .templateName(inboundSms.getTemplateName())
@@ -190,27 +185,23 @@ public class NotificationProcessingService {
                 .build();
 
         try {
-            sendNotificationService.sendSmsRequest(smsContent, user, idempotencyKey);
+            sendNotificationService.sendSmsRequest(smsContent, user, idempotencyKey, priority);
         } catch (DuplicateNotificationFoundException e) {
             log.error("Duplicate SMS Request: {}", e.getMessage());
         }
     }
 
-    private List<EmailContent.EmailAttachment> mapEmailAttachments(
-            List<EmailRequest.EmailAttachment> inbound) {
+    private List<EmailContent.EmailAttachment> mapEmailAttachments(List<EmailRequest.EmailAttachment> inbound) {
         if (inbound == null) return null;
         return inbound.stream()
-                .map(a -> new EmailContent.EmailAttachment(
-                        a.getType(), a.getUrl(), a.getFilename()))
+                .map(a -> new EmailContent.EmailAttachment(a.getType(), a.getUrl(), a.getFilename()))
                 .toList();
     }
 
-    private List<WhatsAppContent.WhatsappAttachment> mapWhatsappAttachments(
-            List<WhatsappRequest.WhatsappAttachment> inbound) {
+    private List<WhatsAppContent.WhatsappAttachment> mapWhatsappAttachments(List<WhatsappRequest.WhatsappAttachment> inbound) {
         if (inbound == null) return null;
         return inbound.stream()
-                .map(a -> new WhatsAppContent.WhatsappAttachment(
-                        a.getType(), a.getUrl(), a.getCaption()))
+                .map(a -> new WhatsAppContent.WhatsappAttachment(a.getType(), a.getUrl(), a.getCaption()))
                 .toList();
     }
 

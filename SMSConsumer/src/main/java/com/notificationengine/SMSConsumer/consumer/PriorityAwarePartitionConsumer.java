@@ -44,7 +44,8 @@ public class PriorityAwarePartitionConsumer {
     @KafkaListener(id = GROUP_ID, topics = TOPIC, groupId = GROUP_ID, concurrency = "${notification.kafka.consumer.concurrency}")
     public void consume(ConsumerRecord<String, String> record,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
-                        @Header(value = "correlationId", required = false) byte[] correlationIdBytes) {
+                        @Header(value = "correlationId", required = false) byte[] correlationIdBytes,
+                        @Header(value = "id", required = false) byte[] notificationIdBytes) {
 
         String correlationId = correlationIdBytes != null
                 ? new String(correlationIdBytes, StandardCharsets.UTF_8)
@@ -54,6 +55,9 @@ public class PriorityAwarePartitionConsumer {
 
         try {
             SmsContent request = objectMapper.readValue(record.value(), SmsContent.class);
+            if (notificationIdBytes != null) {
+                request.setNotificationId(Long.parseLong(new String(notificationIdBytes, StandardCharsets.UTF_8)));
+            }
             smsProcessingService.processSms(request);
         } catch (FatalVendorException e) {
             log.error("Fatal validation error on partition offset: {}. Routing to DLT.", record.offset(), e);
@@ -69,7 +73,8 @@ public class PriorityAwarePartitionConsumer {
     @DltHandler
     public void handleDeadLetterQueue(ConsumerRecord<String, String> record,
                                       @Header(KafkaHeaders.EXCEPTION_MESSAGE) String exceptionMessage,
-                                      @Header(value = "correlationId", required = false) byte[] correlationIdBytes) {
+                                      @Header(value = "correlationId", required = false) byte[] correlationIdBytes,
+                                      @Header(value = "id", required = false) byte[] notificationIdBytes) {
         String correlationId = correlationIdBytes != null
                 ? new String(correlationIdBytes, StandardCharsets.UTF_8)
                 : "UNKNOWN-TRACE";
@@ -78,11 +83,11 @@ public class PriorityAwarePartitionConsumer {
         meterRegistry.counter("notification_dlt_total", "topic", record.topic()).increment();
 
         try {
-            SmsContent request = objectMapper.readValue(record.value(), SmsContent.class);
-            if (request != null && request.getNotificationId() != null) {
-                smsProcessingService.handlePermanentFailure(request.getNotificationId(), exceptionMessage);
+            if (notificationIdBytes != null) {
+                Long notificationId = Long.parseLong(new String(notificationIdBytes, StandardCharsets.UTF_8));
+                smsProcessingService.handlePermanentFailure(notificationId, exceptionMessage);
             } else {
-                log.error("Unable to extract notificationId from the raw DLT payload record.");
+                log.error("Unable to extract notificationId from header on DLT record.");
             }
         } catch (Exception ex) {
             log.error("Failed to process status changes inside DLT: ", ex);

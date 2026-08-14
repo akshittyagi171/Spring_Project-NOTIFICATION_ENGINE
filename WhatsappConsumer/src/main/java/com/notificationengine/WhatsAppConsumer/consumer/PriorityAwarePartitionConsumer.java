@@ -39,12 +39,13 @@ public class PriorityAwarePartitionConsumer {
             backoff = @Backoff(delay = 5000, multiplier = 3.0, maxDelay = 60000),
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
             dltStrategy = DltStrategy.FAIL_ON_ERROR,
-            exclude = { FatalVendorException.class }
+            exclude = {FatalVendorException.class}
     )
     @KafkaListener(id = GROUP_ID, topics = TOPIC, groupId = GROUP_ID, concurrency = "${notification.kafka.consumer.concurrency}")
     public void consume(ConsumerRecord<String, String> record,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
-                        @Header(value = "correlationId", required = false) byte[] correlationIdBytes) {
+                        @Header(value = "correlationId", required = false) byte[] correlationIdBytes,
+                        @Header(value = "id", required = false) byte[] notificationIdBytes) {
 
         String correlationId = correlationIdBytes != null ? new String(correlationIdBytes, StandardCharsets.UTF_8) : UUID.randomUUID().toString();
         MDC.put("correlationId", correlationId);
@@ -52,6 +53,9 @@ public class PriorityAwarePartitionConsumer {
 
         try {
             WhatsAppContent request = objectMapper.readValue(record.value(), WhatsAppContent.class);
+            if (notificationIdBytes != null) {
+                request.setNotificationId(Long.parseLong(new String(notificationIdBytes, StandardCharsets.UTF_8)));
+            }
             whatsAppProcessingService.processWhatsApp(request);
         } catch (FatalVendorException e) {
             log.error("Fatal validation error on partition offset: {}. Routing to DLT.", record.offset(), e);
@@ -67,16 +71,19 @@ public class PriorityAwarePartitionConsumer {
     @DltHandler
     public void handleDeadLetterQueue(ConsumerRecord<String, String> record,
                                       @Header(KafkaHeaders.EXCEPTION_MESSAGE) String exceptionMessage,
-                                      @Header(value = "correlationId", required = false) byte[] correlationIdBytes) {
+                                      @Header(value = "correlationId", required = false) byte[] correlationIdBytes,
+                                      @Header(value = "id", required = false) byte[] notificationIdBytes) {
         String correlationId = correlationIdBytes != null ? new String(correlationIdBytes, StandardCharsets.UTF_8) : "UNKNOWN-TRACE";
         MDC.put("correlationId", correlationId);
         log.error("CRITICAL AUDIT: DLT Invoked. Reason: {}", exceptionMessage);
         meterRegistry.counter("notification_dlt_total", "topic", record.topic()).increment();
 
         try {
-            WhatsAppContent request = objectMapper.readValue(record.value(), WhatsAppContent.class);
-            if (request != null && request.getNotificationId() != null) {
-                whatsAppProcessingService.handlePermanentFailure(request.getNotificationId(), exceptionMessage);
+            if (notificationIdBytes != null) {
+                Long notificationId = Long.parseLong(new String(notificationIdBytes, StandardCharsets.UTF_8));
+                whatsAppProcessingService.handlePermanentFailure(notificationId, exceptionMessage);
+            } else {
+                log.error("Unable to extract notificationId from header on DLT record.");
             }
         } catch (Exception ex) {
             log.error("Failed to process status changes inside DLT: ", ex);

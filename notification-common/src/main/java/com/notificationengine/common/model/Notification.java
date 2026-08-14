@@ -38,6 +38,12 @@ public class Notification {
     @Column(name = "notification_hash", length = 128)
     private String notificationHash;
 
+    @Column(name = "correlation_id", length = 64)
+    private String correlationId;
+
+    @Column(name = "priority")
+    private String priority = "1";
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -52,4 +58,3 @@ public class Notification {
         this.notificationHash = notificationHash;
     }
 }
-

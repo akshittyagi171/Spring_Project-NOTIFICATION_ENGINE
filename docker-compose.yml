@@ -10,6 +10,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: notification_engine
+    command: --log-bin=mysql-bin --binlog-format=ROW --server-id=1 --binlog-row-image=FULL
     volumes:
       - mysql_data:/var/lib/mysql
       - ./notification_engine.sql:/docker-entrypoint-initdb.d/notification_engine.sql
@@ -47,6 +48,28 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    networks:
+      - notification-network
+
+  # --- Kafka Connect (Debezium bundled) — outbox relay ---
+  kafka-connect:
+    build:
+      context: ./kafka-connect
+    container_name: kafka-connect
+    depends_on:
+      - broker
+      - mysql
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: broker:29092
+      GROUP_ID: notification-connect-cluster
+      CONFIG_STORAGE_TOPIC: connect-configs
+      OFFSET_STORAGE_TOPIC: connect-offsets
+      STATUS_STORAGE_TOPIC: connect-status
+      KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY: All
     networks:
       - notification-network
 
@@ -111,6 +134,21 @@ services:
     depends_on:
       - broker
     restart: always
+    networks:
+      - notification-network
+
+  connect-init:
+    image: curlimages/curl:latest
+    container_name: connect-init
+    depends_on:
+      - kafka-connect
+    volumes:
+      - ./kafka-connect/outbox-connector.json:/outbox-connector.json
+    entrypoint: >
+      sh -c "
+        until curl -sf http://connect:8083/connectors; do sleep 2; done;
+        curl -X POST http://connect:8083/connectors -H 'Content-Type: application/json' -d @/outbox-connector.json
+      "
     networks:
       - notification-network
 
