@@ -25,3 +25,6 @@ fi
 echo ""
 echo "Connector status:"
 curl -s "${CONNECT_URL}/connectors/${CONNECTOR_NAME}/status" | jq
+
+# keeping it in the repo as a manual re-run tool for whenever you edit outbox-connector.json
+# mid-session without wanting to tear down the whole stack — but it's no longer required for a clean start.

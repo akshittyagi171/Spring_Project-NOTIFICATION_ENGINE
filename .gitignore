@@ -17,4 +17,4 @@ Thumbs.db
 
 # Environment configuration
 *.env
-*.properties.local
+*.properties.localPushNConsumer/src/main/resources/firebase-service-account.json

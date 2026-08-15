@@ -29,7 +29,7 @@ CREATE TABLE `delivery_logs` (
   PRIMARY KEY (`log_id`),
   KEY `notification_id` (`notification_id`),
   CONSTRAINT `delivery_logs_ibfk_1` FOREIGN KEY (`notification_id`) REFERENCES `notifications` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=102 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `notifications`;
 CREATE TABLE `notifications` (
@@ -40,6 +40,7 @@ CREATE TABLE `notifications` (
   `message` text,
   `notification_hash` char(128) NOT NULL,
   `request_content` json DEFAULT NULL,
+  `correlation_id` varchar(64) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `priority` enum('1','2','3') NOT NULL DEFAULT '1',
@@ -48,7 +49,7 @@ CREATE TABLE `notifications` (
   KEY `user_id_2` (`user_id`),
   KEY `status` (`status`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `preferences`;
 CREATE TABLE `preferences` (
