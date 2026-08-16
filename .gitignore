@@ -18,3 +18,4 @@ Thumbs.db
 # Environment configuration
 *.env
 *.properties.localPushNConsumer/src/main/resources/firebase-service-account.json
+infra/vault/secrets.env
