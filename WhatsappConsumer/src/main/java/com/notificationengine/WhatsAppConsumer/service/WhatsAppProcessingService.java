@@ -22,7 +22,8 @@ public class WhatsAppProcessingService {
         }
 
         SendWhatsAppResponse response = vendorClient.sendWhatsAppWithResilience(whatsAppContent);
-        txManager.updateNotificationStateAndLog(whatsAppContent.getNotificationId(), response.getMessage());
+        txManager.updateNotificationStateAndLog(
+                whatsAppContent.getNotificationId(), response.getVendorMessageSid(), response.getMessage());
     }
 
     public void handlePermanentFailure(Long notificationId, String exceptionMessage) {

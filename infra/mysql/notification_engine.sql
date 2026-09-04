@@ -36,11 +36,12 @@ CREATE TABLE `notifications` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
   `channel` enum('email','sms','push','whatsapp') NOT NULL,
-  `status` enum('pending','sent','failed') NOT NULL DEFAULT 'pending',
+  `status` enum('pending','sent','delivered','undelivered','read','failed') NOT NULL DEFAULT 'pending',
   `message` text,
   `notification_hash` char(128) NOT NULL,
   `request_content` json DEFAULT NULL,
   `correlation_id` varchar(64) DEFAULT NULL,
+  `provider_message_sid` varchar(64) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `priority` enum('1','2','3') NOT NULL DEFAULT '1',
@@ -48,6 +49,7 @@ CREATE TABLE `notifications` (
   UNIQUE KEY `uk_user_channel_hash` (`user_id`,`channel`,`notification_hash`),
   KEY `user_id_2` (`user_id`),
   KEY `status` (`status`),
+  KEY `provider_message_sid` (`provider_message_sid`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

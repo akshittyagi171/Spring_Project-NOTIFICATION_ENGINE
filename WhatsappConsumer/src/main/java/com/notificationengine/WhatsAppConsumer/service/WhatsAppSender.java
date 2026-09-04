@@ -40,6 +40,9 @@ public class WhatsAppSender {
             }
         }
 
+        URI statusCallbackUri = URI.create(
+                twilioConfig.getStatusCallbackBaseUrl() + "?notificationId=" + whatsAppContent.getNotificationId());
+
         try {
             log.info("Preparing production-ready sequential WhatsApp notification for ID: {}. Target: {}",
                     whatsAppContent.getNotificationId(), toAddress);
@@ -49,19 +52,19 @@ public class WhatsAppSender {
             if (mediaUris.isEmpty()) {
                 lastMessage = Message.creator(
                         new PhoneNumber(toAddress), new PhoneNumber(fromAddress), whatsAppContent.getMessage()
-                ).create();
+                ).setStatusCallback(statusCallbackUri).create();
                 sentSids.add(lastMessage.getSid());
             } else {
                 lastMessage = Message.creator(
                         new PhoneNumber(toAddress), new PhoneNumber(fromAddress), whatsAppContent.getMessage()
-                ).setMediaUrl(List.of(mediaUris.get(0))).create();
+                ).setMediaUrl(List.of(mediaUris.get(0))).setStatusCallback(statusCallbackUri).create();
                 sentSids.add(lastMessage.getSid());
                 log.info("Dispatched Message 1 (Body + Media 1). SID: {}", lastMessage.getSid());
 
                 for (int i = 1; i < mediaUris.size(); i++) {
                     Message subsequentMessage = Message.creator(
                             new PhoneNumber(toAddress), new PhoneNumber(fromAddress), ""
-                    ).setMediaUrl(List.of(mediaUris.get(i))).create();
+                    ).setMediaUrl(List.of(mediaUris.get(i))).setStatusCallback(statusCallbackUri).create();
 
                     sentSids.add(subsequentMessage.getSid());
                     lastMessage = subsequentMessage;
@@ -69,10 +72,15 @@ public class WhatsAppSender {
                 }
             }
 
-            log.info("WhatsApp Dispatch Complete! (Notification Id: {}). Final Status: {}, Twilio Message SIDs: [{}]",
-                    whatsAppContent.getNotificationId(), lastMessage.getStatus(), String.join(", ", sentSids));
+            String initialStatus = lastMessage.getStatus() != null ? lastMessage.getStatus().toString() : "unknown";
+            log.info("WhatsApp handed off to Twilio (Notification Id: {}). Initial status: {}, SIDs: [{}]",
+                    whatsAppContent.getNotificationId(), initialStatus, String.join(", ", sentSids));
 
-            return new SendWhatsAppResponse(200, "Sids: [" + String.join(", ", sentSids) + "]");
+            SendWhatsAppResponse response = new SendWhatsAppResponse(200,
+                    "Accepted by Twilio (initial status: " + initialStatus + "). SIDs: [" + String.join(", ", sentSids) + "]");
+            response.setVendorMessageSid(sentSids.get(0));
+            response.setVendorInitialStatus(initialStatus);
+            return response;
 
         } catch (ApiException apiException) {
             if (!sentSids.isEmpty()) {

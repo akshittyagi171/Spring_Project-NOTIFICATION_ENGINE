@@ -41,6 +41,9 @@ public class Notification {
     @Column(name = "correlation_id", length = 64)
     private String correlationId;
 
+    @Column(name = "provider_message_sid", length = 64)
+    private String providerMessageSid;
+
     @Column(name = "priority")
     private String priority = "1";
 

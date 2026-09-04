@@ -10,4 +10,11 @@ import lombok.NoArgsConstructor;
 public class SendWhatsAppResponse {
     private int status;
     private String message;
+    private String vendorMessageSid;
+    private String vendorInitialStatus;
+
+    public SendWhatsAppResponse(int status, String message) {
+        this.status = status;
+        this.message = message;
+    }
 }

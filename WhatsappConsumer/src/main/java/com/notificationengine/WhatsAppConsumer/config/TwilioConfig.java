@@ -21,6 +21,9 @@ public class TwilioConfig {
     @Value("${twilio.from-number}")
     private String fromNumber;
 
+    @Value("${twilio.status-callback-base-url}")
+    private String statusCallbackBaseUrl;
+
     @PostConstruct
     public void initTwilio() {
         log.info("Initializing global Twilio container instance context...");

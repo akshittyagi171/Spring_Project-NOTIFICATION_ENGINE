@@ -35,8 +35,7 @@ public class ResilientWhatsAppVendorClient {
         }
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
-            response.setMessage("WhatsApp Delivered Successfully");
-            meterRegistry.counter("notification_vendor_result_total", "channel", "whatsapp", "status", "SUCCESS").increment();
+            meterRegistry.counter("notification_vendor_result_total", "channel", "whatsapp", "status", "ACCEPTED").increment();
             return response;
         }
 
