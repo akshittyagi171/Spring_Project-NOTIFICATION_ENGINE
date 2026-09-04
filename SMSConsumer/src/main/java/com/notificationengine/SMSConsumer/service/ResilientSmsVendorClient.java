@@ -27,8 +27,7 @@ public class ResilientSmsVendorClient {
         SendSmsResponse response = smsSender.sendSms(smsContent);
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
-            response.setMessage("SMS Delivered Successfully");
-            meterRegistry.counter("notification_vendor_result_total", "channel", "sms", "status", "SUCCESS").increment();
+            meterRegistry.counter("notification_vendor_result_total", "channel", "sms", "status", "ACCEPTED").increment();
             return response;
         }
 

@@ -1,7 +1,8 @@
 package com.notificationengine.notificationservice.controllers;
 
+import com.notificationengine.common.enums.Channel;
 import com.notificationengine.notificationservice.config.TwilioWebhookConfig;
-import com.notificationengine.notificationservice.service.TwilioWhatsAppDeliveryStatusService;
+import com.notificationengine.notificationservice.service.TwilioMessageDeliveryStatusService;
 import com.twilio.security.RequestValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -22,18 +23,17 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Receives Twilio's asynchronous delivery-status callbacks for WhatsApp messages
- * (queued -> sent -> delivered/undelivered, plus read receipts). This is the piece the codebase
- * previously had no way to receive: WhatsAppSender only ever saw Twilio's *initial* "queued/
- * accepted" response, and that got reported upstream as delivery success. This endpoint is where
- * the real, final outcome comes back.
+ * Receives Twilio's asynchronous delivery-status callbacks for channels that go through Twilio's
+ * Message resource (WhatsApp and SMS). This is the piece the codebase previously had no way to
+ * receive: the consumers only ever saw Twilio's *initial* "queued/accepted" response, and that
+ * got reported upstream as delivery success. This is where the real, final outcome comes back.
  */
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class TwilioWebhookController {
 
-    private final TwilioWhatsAppDeliveryStatusService deliveryStatusService;
+    private final TwilioMessageDeliveryStatusService deliveryStatusService;
     private final TwilioWebhookConfig twilioWebhookConfig;
 
     @PostMapping(value = "/api/webhooks/twilio/whatsapp-status", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -41,7 +41,22 @@ public class TwilioWebhookController {
             HttpServletRequest request,
             @RequestParam Long notificationId,
             @RequestHeader(value = "X-Twilio-Signature", required = false) String twilioSignature) {
+        return handleStatusCallback(Channel.whatsapp, twilioWebhookConfig.getWebhookBaseUrl(),
+                request, notificationId, twilioSignature);
+    }
 
+    @PostMapping(value = "/api/webhooks/twilio/sms-status", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public ResponseEntity<Void> handleSmsStatusCallback(
+            HttpServletRequest request,
+            @RequestParam Long notificationId,
+            @RequestHeader(value = "X-Twilio-Signature", required = false) String twilioSignature) {
+        return handleStatusCallback(Channel.sms, twilioWebhookConfig.getSmsWebhookBaseUrl(),
+                request, notificationId, twilioSignature);
+    }
+
+    private ResponseEntity<Void> handleStatusCallback(Channel channel, String webhookBaseUrl,
+                                                      HttpServletRequest request, Long notificationId,
+                                                      String twilioSignature) {
         Set<String> queryParamNames = new HashSet<>();
         String queryString = request.getQueryString();
         if (queryString != null && !queryString.isBlank()) {
@@ -58,18 +73,20 @@ public class TwilioWebhookController {
             }
         });
 
-        String expectedCallbackUrl = twilioWebhookConfig.getWebhookBaseUrl() + "?notificationId=" + notificationId;
+        String expectedCallbackUrl = webhookBaseUrl + "?notificationId=" + notificationId;
 
         boolean signatureValid = twilioSignature != null &&
                 new RequestValidator(twilioWebhookConfig.getAuthToken())
                         .validate(expectedCallbackUrl, bodyParams, twilioSignature);
 
         if (!signatureValid) {
-            log.warn("Rejected Twilio webhook for notificationId {}: missing/invalid X-Twilio-Signature", notificationId);
+            log.warn("Rejected Twilio {} webhook for notificationId {}: missing/invalid X-Twilio-Signature",
+                    channel, notificationId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         deliveryStatusService.applyStatusCallback(
+                channel,
                 bodyParams.get("MessageSid"),
                 bodyParams.get("MessageStatus"),
                 bodyParams.get("ErrorCode"),

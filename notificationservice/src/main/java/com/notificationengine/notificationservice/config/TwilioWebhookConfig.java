@@ -13,4 +13,7 @@ public class TwilioWebhookConfig {
 
     @Value("${twilio.status-callback-base-url}")
     private String webhookBaseUrl;
+
+    @Value("${twilio.sms-status-callback-base-url}")
+    private String smsWebhookBaseUrl;
 }

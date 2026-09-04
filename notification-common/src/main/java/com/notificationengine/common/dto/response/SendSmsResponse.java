@@ -10,4 +10,11 @@ import lombok.NoArgsConstructor;
 public class SendSmsResponse {
     private int status;
     private String message;
+    private String vendorMessageSid;
+    private String vendorInitialStatus;
+
+    public SendSmsResponse(int status, String message) {
+        this.status = status;
+        this.message = message;
+    }
 }

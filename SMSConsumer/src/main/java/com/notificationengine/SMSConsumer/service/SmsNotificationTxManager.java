@@ -21,15 +21,16 @@ public class SmsNotificationTxManager {
     private final DeliveryLogRepository deliveryLogRepository;
 
     @Transactional
-    public void updateNotificationStateAndLog(Long notificationId, String message) {
+    public void updateNotificationStateAndLog(Long notificationId, String vendorMessageSid, String message) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotificationNotFoundException(
                         "Notification resource entity not found for ID: " + notificationId
                 ));
 
         notification.setStatus(Status.sent);
+        notification.setProviderMessageSid(vendorMessageSid);
         notificationRepository.save(notification);
-        log.info("Notification status tracking updated to SENT for ID: {}", notificationId);
+        log.info("Notification status tracking updated to SENT for ID: {} (vendor SID: {})", notificationId, vendorMessageSid);
 
         DeliveryLog logEntry = new DeliveryLog(notification, Channel.sms, Status.sent, message);
         deliveryLogRepository.save(logEntry);

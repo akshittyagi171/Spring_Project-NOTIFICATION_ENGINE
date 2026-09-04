@@ -18,7 +18,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TwilioWhatsAppDeliveryStatusService {
+public class TwilioMessageDeliveryStatusService {
 
     private final NotificationRepository notificationRepository;
     private final DeliveryLogRepository deliveryLogRepository;
@@ -36,17 +36,18 @@ public class TwilioWhatsAppDeliveryStatusService {
     );
 
     @Transactional
-    public void applyStatusCallback(String messageSid, String twilioMessageStatus, String errorCode, String errorMessage) {
+    public void applyStatusCallback(Channel channel, String messageSid, String twilioMessageStatus,
+                                    String errorCode, String errorMessage) {
         if (messageSid == null || messageSid.isBlank()) {
-            log.warn("Twilio status callback received with no MessageSid - ignoring. Status: {}", twilioMessageStatus);
+            log.warn("Twilio status callback received with no MessageSid - ignoring. Channel: {}, Status: {}",
+                    channel, twilioMessageStatus);
             return;
         }
 
         Optional<Notification> maybeNotification = notificationRepository.findByProviderMessageSid(messageSid);
         if (maybeNotification.isEmpty()) {
-            // Expected for the secondary SIDs of a multi-media WhatsApp send (see WhatsAppSender)
-            // and for any callback that arrives after the notification row has been purged.
-            log.warn("Twilio status callback for unknown/untracked MessageSid: {} (status: {})", messageSid, twilioMessageStatus);
+            log.warn("Twilio status callback for unknown/untracked MessageSid: {} (channel: {}, status: {})",
+                    messageSid, channel, twilioMessageStatus);
             return;
         }
 
@@ -58,6 +59,13 @@ public class TwilioWhatsAppDeliveryStatusService {
         }
 
         Notification notification = maybeNotification.get();
+
+        if (notification.getChannel() != channel) {
+            log.warn("Twilio webhook for channel {} resolved to notification {} which is tracked as " +
+                            "channel {} - check twilio.status-callback-base-url config for cross-wiring. " +
+                            "Proceeding using the notification's own recorded channel.",
+                    channel, notification.getId(), notification.getChannel());
+        }
 
         if (isRegressive(notification.getStatus(), newStatus)) {
             log.warn("Ignoring out-of-order Twilio callback for notification {}: current status {} is already " +
@@ -73,10 +81,10 @@ public class TwilioWhatsAppDeliveryStatusService {
             logMessage += String.format(" (errorCode=%s, errorMessage=%s)", errorCode, errorMessage);
         }
 
-        deliveryLogRepository.save(new DeliveryLog(notification, Channel.whatsapp, newStatus, logMessage));
+        deliveryLogRepository.save(new DeliveryLog(notification, notification.getChannel(), newStatus, logMessage));
 
-        log.info("Notification {} moved to {} via Twilio webhook (SID: {})",
-                notification.getId(), newStatus, messageSid);
+        log.info("Notification {} moved to {} via Twilio webhook (channel: {}, SID: {})",
+                notification.getId(), newStatus, notification.getChannel(), messageSid);
     }
 
     private boolean isRegressive(Status current, Status incoming) {

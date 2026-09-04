@@ -22,7 +22,8 @@ public class SmsProcessingService {
         }
 
         SendSmsResponse response = vendorClient.sendSmsWithResilience(smsContent);
-        txManager.updateNotificationStateAndLog(smsContent.getNotificationId(), response.getMessage());
+        txManager.updateNotificationStateAndLog(
+                smsContent.getNotificationId(), response.getVendorMessageSid(), response.getMessage());
     }
 
     public void handlePermanentFailure(Long notificationId, String exceptionMessage) {

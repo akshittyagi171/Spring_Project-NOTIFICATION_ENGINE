@@ -9,6 +9,8 @@ import com.twilio.type.PhoneNumber;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+
 @Service
 @Slf4j
 public class SmsSender {
@@ -26,16 +28,24 @@ public class SmsSender {
             log.info("Preparing production-ready SMS notification for ID: {}. Target: {}",
                     smsContent.getNotificationId(), targetMobile);
 
+            URI statusCallbackUri = URI.create(
+                    twilioConfig.getStatusCallbackBaseUrl() + "?notificationId=" + smsContent.getNotificationId());
+
             Message message = Message.creator(
                     new PhoneNumber(targetMobile),
                     new PhoneNumber(twilioConfig.getFromNumber()),
                     smsContent.getMessage()
-            ).create();
+            ).setStatusCallback(statusCallbackUri).create();
 
-            log.info("SMS Dispatch Successful! (Notification Id: {}). Response Status: {}, Twilio Message SID: {}",
-                    smsContent.getNotificationId(), message.getStatus(), message.getSid());
+            String initialStatus = message.getStatus() != null ? message.getStatus().toString() : "unknown";
+            log.info("SMS handed off to Twilio (Notification Id: {}). Initial status: {}, SID: {}",
+                    smsContent.getNotificationId(), initialStatus, message.getSid());
 
-            return new SendSmsResponse(200, "Sid: " + message.getSid() + " Body: " + message.getBody());
+            SendSmsResponse response = new SendSmsResponse(200,
+                    "Accepted by Twilio (initial status: " + initialStatus + "). SID: " + message.getSid());
+            response.setVendorMessageSid(message.getSid());
+            response.setVendorInitialStatus(initialStatus);
+            return response;
 
         } catch (ApiException apiException) {
             Integer statusCode = apiException.getStatusCode();
