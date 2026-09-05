@@ -10,4 +10,10 @@ import lombok.NoArgsConstructor;
 public class SendPushNResponse {
     private int status;
     private String message;
+    private String vendorMessageSid;
+
+    public SendPushNResponse(int status, String message) {
+        this.status = status;
+        this.message = message;
+    }
 }

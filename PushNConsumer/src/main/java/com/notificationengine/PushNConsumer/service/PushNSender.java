@@ -50,8 +50,11 @@ public class PushNSender {
                     .build();
 
             String responseId = FirebaseMessaging.getInstance().send(firebaseMessage);
-            log.info("Push Notification successfully broadcasted to FCM network. Message ID: {}", responseId);
-            return new SendPushNResponse(202, "Delivered: " + responseId);
+            log.info("Push Notification handed off to FCM (Notification Id: {}). FCM message id: {}",
+                    pushContent.getNotificationId(), responseId);
+            SendPushNResponse response = new SendPushNResponse(202, "Accepted by FCM (message id: " + responseId + ")");
+            response.setVendorMessageSid(responseId);
+            return response;
 
         } catch (FirebaseMessagingException e) {
             MessagingErrorCode errorCode = e.getMessagingErrorCode();

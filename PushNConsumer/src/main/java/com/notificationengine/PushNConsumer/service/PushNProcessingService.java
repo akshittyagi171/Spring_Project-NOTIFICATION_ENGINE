@@ -22,7 +22,8 @@ public class PushNProcessingService {
         }
 
         SendPushNResponse response = vendorClient.sendPushNWithResilience(pushContent);
-        txManager.updateNotificationStateAndLog(pushContent.getNotificationId(), response.getMessage());
+        txManager.updateNotificationStateAndLog(
+                pushContent.getNotificationId(), response.getVendorMessageSid(), response.getMessage());
     }
 
     public void handlePermanentFailure(Long notificationId, String exceptionMessage) {

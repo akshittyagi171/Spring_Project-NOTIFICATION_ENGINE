@@ -27,8 +27,7 @@ public class ResilientPushNVendorClient {
         SendPushNResponse response = pushNSender.sendPushNotification(pushContent);
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
-            response.setMessage("Push Notification Delivered Successfully");
-            meterRegistry.counter("notification_vendor_result_total", "channel", "push", "status", "SUCCESS").increment();
+            meterRegistry.counter("notification_vendor_result_total", "channel", "push", "status", "ACCEPTED").increment();
             return response;
         }
 
