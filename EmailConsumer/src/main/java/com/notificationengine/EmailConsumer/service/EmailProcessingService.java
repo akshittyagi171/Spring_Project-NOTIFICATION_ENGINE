@@ -22,7 +22,8 @@ public class EmailProcessingService {
         }
 
         SendEmailResponse response = vendorClient.sendEmailWithResilience(emailContent);
-        txManager.updateNotificationStateAndLog(emailContent.getNotificationId(), response.getMessage());
+        txManager.updateNotificationStateAndLog(
+                emailContent.getNotificationId(), response.getVendorMessageSid(), response.getMessage());
     }
 
     public void handlePermanentFailure(Long notificationId, String exceptionMessage) {

@@ -10,6 +10,7 @@ import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Attachments;
 import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
+import com.sendgrid.helpers.mail.objects.Personalization;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import static com.notificationengine.EmailConsumer.constants.Constants.PARTIAL_DELIVERY_STATUS;
 
@@ -38,11 +40,7 @@ public class EmailSender {
     public SendEmailResponse sendEmail(EmailContent emailContent) {
         log.info("Initiating SendGrid processing block context for Notification ID: {}", emailContent.getNotificationId());
 
-        Email from = new Email(fromEmailAddress);
-        String subject = emailContent.getSubject();
-        Email to = new Email(emailContent.getEmailId());
-        Content content = new Content("text/html", emailContent.getMessage());
-        Mail mail = new Mail(from, subject, to, content);
+        Mail mail = getMail(emailContent);
 
         List<String> failedAttachments = new ArrayList<>();
         List<EmailContent.EmailAttachment> attachments = emailContent.getAttachments();
@@ -68,15 +66,21 @@ public class EmailSender {
 
             log.info("SendGrid Dispatch Logged - Status: {}, NotificationId: {}", response.getStatusCode(), emailContent.getNotificationId());
 
+            String vendorMessageId = extractHeaderCaseInsensitive(response.getHeaders(), "X-Message-Id");
+
             if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
                 if (!failedAttachments.isEmpty()) {
                     String message = String.format(
                             "Email sent but %d attachment(s) failed to download and were omitted: %s",
                             failedAttachments.size(), String.join(", ", failedAttachments));
                     log.error("PARTIAL DELIVERY for notification ID {}: {}", emailContent.getNotificationId(), message);
-                    return new SendEmailResponse(PARTIAL_DELIVERY_STATUS, message);
+                    SendEmailResponse partial = new SendEmailResponse(PARTIAL_DELIVERY_STATUS, message);
+                    partial.setVendorMessageSid(vendorMessageId);
+                    return partial;
                 }
-                return new SendEmailResponse(response.getStatusCode(), "Email accepted via SendGrid.");
+                SendEmailResponse success = new SendEmailResponse(response.getStatusCode(), "Email accepted via SendGrid.");
+                success.setVendorMessageSid(vendorMessageId);
+                return success;
             } else {
                 return new SendEmailResponse(response.getStatusCode(), response.getBody());
             }
@@ -86,7 +90,36 @@ public class EmailSender {
         }
     }
 
-    /** @return true if the attachment was successfully downloaded and bound, false otherwise. */
+    private Mail getMail(EmailContent emailContent) {
+        Email from = new Email(fromEmailAddress);
+        String subject = emailContent.getSubject();
+        Email to = new Email(emailContent.getEmailId());
+        Content content = new Content("text/html", emailContent.getMessage());
+
+        Personalization personalization = new Personalization();
+        personalization.addTo(to);
+        personalization.addCustomArg("notificationId", String.valueOf(emailContent.getNotificationId()));
+
+        Mail mail = new Mail();
+        mail.setFrom(from);
+        mail.setSubject(subject);
+        mail.addContent(content);
+        mail.addPersonalization(personalization);
+        return mail;
+    }
+
+    private String extractHeaderCaseInsensitive(Map<String, String> headers, String headerName) {
+        if (headers == null) {
+            return null;
+        }
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(headerName)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
     private boolean attachDynamicUrlAsset(Mail mail, EmailContent.EmailAttachment attachmentDto, int index) {
         try {
             log.info("Downloading external notification attachment asset resource from: {}", attachmentDto.getUrl());

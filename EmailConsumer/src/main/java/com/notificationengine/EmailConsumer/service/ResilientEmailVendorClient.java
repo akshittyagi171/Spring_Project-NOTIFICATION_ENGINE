@@ -35,8 +35,7 @@ public class ResilientEmailVendorClient {
         }
 
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
-            response.setMessage("Email Delivered Successfully");
-            meterRegistry.counter("notification_vendor_result_total", "channel", "email", "status", "SUCCESS").increment();
+            meterRegistry.counter("notification_vendor_result_total", "channel", "email", "status", "ACCEPTED").increment();
             return response;
         }
 
